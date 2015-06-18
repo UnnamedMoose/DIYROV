@@ -19,12 +19,13 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         
         # own fields
         self.fps = 15 # frame rate of the timer
+        self.HUDcolour = (0,255,0)
         
         # initialise the timing function
         self.frameTimer.Start(int(1.0/self.fps*1000.0))
         
         # create a capture object using OpenCV
-        self.capture = cv2.VideoCapture(0)
+        self.capture = cv2.VideoCapture(1)
         
         # get the current frame, convert colours and store
         ret, frame = self.capture.read()
@@ -51,8 +52,23 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         ret, frame = self.capture.read()
         if ret:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            height, width = frame.shape[:2]
+            
+            # put on overlay of telemetry
+            cv2.putText(frame,'DEPTH: {:6.2f} m'.format(self.getDepth()), (int(0.05*width),int(0.05*height)),
+                        cv2.FONT_HERSHEY_PLAIN, 1, self.HUDcolour, 2) # size, colour, thickness modifier
+            
+            # put on tactical overlay
+            frame=cv2.line(frame,(int(0.2*width),int(0.5*height)),(int(0.8*width),int(0.5*height)),self.HUDcolour,2)
+            frame=cv2.line(frame,(int(0.5*width),int(0.1*height)),(int(0.5*width),int(0.9*height)),self.HUDcolour,2)
+            frame=cv2.circle(frame,(int(0.5*width),int(0.5*height)), int(0.25*width), self.HUDcolour, 2)
+            
             self.bmp.CopyFromBuffer(frame)
             self.videoFeed.SetBitmap(self.bmp)
+            
+    def getDepth(self):
+        """ Should access the controller class and return current depth sensor reading """
+        return 0.0
 
 # implements the GUI class to run a wxApp
 class rovGuiApp(wx.App):

@@ -23,11 +23,9 @@ class mainFrame ( wx.Frame ):
 		
 		mainVertSizer = wx.BoxSizer( wx.VERTICAL )
 		
-		self.videoPanel = wx.Panel( self, wx.ID_ANY)#, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		self.videoPanel = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		videoPanelSizer = wx.BoxSizer( wx.VERTICAL )
 		
-#		self.videoFeed = wx.StaticBitmap( self.videoPanel, wx.ID_ANY, wx.Bitmap( u"../../Pictures/dron.jpg", wx.BITMAP_TYPE_ANY ), wx.DefaultPosition, wx.DefaultSize, 0 )
-#		videoPanelSizer.Add( self.videoFeed, 1, wx.ALL|wx.EXPAND, 5 )
 		
 		self.videoPanel.SetSizer( videoPanelSizer )
 		self.videoPanel.Layout()
