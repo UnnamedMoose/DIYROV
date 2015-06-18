@@ -87,3 +87,44 @@ if __name__ == "__main__":
     # start the app
     app = rovGuiApp()
     app.MainLoop()
+
+""" THIS PIECE OF CODE GETS KEYBOARD INPUTS
+
+btn = wx.Button(panel, label="OK")
+    
+        btn.Bind(wx.EVT_KEY_DOWN, self.onKeyPress)
+    
+    def onKeyPress(self, event):
+        keycode = event.GetKeyCode()
+        print "Keycode: {}".format(keycode)
+        
+        if event.ShiftDown():
+            print "Shift is down!"
+            
+        if event.AltDown():
+            print "Alt is down!"
+
+        if event.CmdDown():
+            print "Command is down!"
+
+        if event.ControlDown():
+            print "Control is down!"
+
+        if keycode==wx.WXK_SPACE:
+            print "space"
+        elif keycode==wx.WXK_LEFT or keycode==wx.WXK_NUMPAD_LEFT:
+            print "left"
+        elif keycode==wx.WXK_RIGHT or keycode==wx.WXK_NUMPAD_RIGHT:
+            print "right"
+        elif keycode==wx.WXK_UP or keycode==wx.WXK_NUMPAD_UP:
+            print "up"
+        elif keycode==wx.WXK_DOWN or keycode==wx.WXK_NUMPAD_DOWN:
+            print "down"
+        elif keycode==wx.WXK_PAGEUP or keycode==wx.WXK_NUMPAD_PAGEUP:
+            print "page up"
+        elif keycode==wx.WXK_PAGEDOWN or keycode==wx.WXK_NUMPAD_PAGEDOWN:
+            print "page down"
+
+        event.Skip()
+
+"""
