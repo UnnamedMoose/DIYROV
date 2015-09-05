@@ -2,7 +2,12 @@
 """
 Created on Sun May 24 16:34:31 2015
 
-@author: artur
+@author: Artur, Alek
+@version: 1.0.0
+@since: 19 Jun 2015
+
+CHANGELOG:
+19 Jun 2015 - 1.0.0 - Alek - updated the docs.
 """
 
 import ROVgui_mainFrame
@@ -22,7 +27,7 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         # initialise the underlying object
         ROVgui_mainFrame.mainFrame.__init__( self, None )
         
-        # set-up own fields
+        # Own fields that define the GUI properties.
         self.fps = 15 # frame rate of the timer
         self.HUDcolour = (0,255,0) # RGB colour of the overlay on the HUD
         
@@ -166,25 +171,59 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
             
             # get the current frame, convert colours and store
             ret, frame = self.cameraCapture.read()
+
+            # Create a capture object using OpenCV - use this to get live image stream from the ROV camera.
+            self.capture = cv2.VideoCapture(1)
+            
+            # get the current frame, convert colours and store.
+            ret, frame = self.capture.read()
             height, width = frame.shape[:2]
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             self.bmp = wx.BitmapFromBuffer(width, height, frame)
-
-            self.videoFeed = statbmp.GenStaticBitmap(self.videoFeedPanel, wx.ID_ANY,self.bmp)
-
-            # add to the panel and resize to fit everything
-#            self.videoFeedPanel.GetSizer().Add( self.videoFeed, 1,
-#                wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
-            self.videoFeedPanel.Layout()
-            self.videoFeedPanel.SetFocus()
-
-            # set the video feed as open
-            self.feedOn = True
+            
+            # Create the bitmap object - converted photo from the ROV camera in wx format.
+            self.videoFeed = statbmp.GenStaticBitmap(self.videoPanel, wx.ID_ANY,
+                                                     #wx.Bitmap( u"../../Pictures/dron.jpg", wx.BITMAP_TYPE_ANY )
+                                                     #wx.EmptyBitmap(640,480)
+                                                     self.bmp
+                                                     )
+            
+            # Add the photo to the panel and resize to fit everything.
+            self.videoPanel.GetSizer().Add( self.videoFeed, 1, wx.ALL|wx.EXPAND, 5 )
+            self.videoPanel.GetSizer().SetSizeHints(self)
+            self.videoPanel.Layout()
+            self.videoPanel.SetFocus()
+            
+        except:
+            # TODO throw error - cannot start video feed
+            pass
+        
+    def onNewFrame( self, event ):
+        " Called when the internal timer requests a new frame to be updated. "
+        try:
+            # get a new frame, if it's OK then update the display
+            ret, frame = self.capture.read()
+            if ret:
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                height, width = frame.shape[:2]
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                self.bmp = wx.BitmapFromBuffer(width, height, frame)
+    
+                self.videoFeed = statbmp.GenStaticBitmap(self.videoFeedPanel, wx.ID_ANY,self.bmp)
+    
+                # add to the panel and resize to fit everything
+#                self.videoFeedPanel.GetSizer().Add( self.videoFeed, 1,
+#                    wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
+                self.videoFeedPanel.Layout()
+                self.videoFeedPanel.SetFocus()
+    
+                # set the video feed as open
+                self.feedOn = True
         
         except AttributeError:
             self.feedOn = False
             
-            wx.MessageBox('Could not start video feed', 'Error', 
+            wx.MessageBox('Error while getting new frame', 'Error', 
                     wx.OK | wx.ICON_ERROR)
     
     def getNewFrame(self):
@@ -296,8 +335,8 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
             self.portChoice.SetSelection(0)
             self.currentSelection = 'None'
 
-# implements the GUI class to run a wxApp
 class rovGuiApp(wx.App):
+    " Implements the GUI class to run a wxApp. "
     def OnInit(self):
         self.frame = rovGuiMainFrame()
         self.SetTopWindow(self.frame)
@@ -305,7 +344,7 @@ class rovGuiApp(wx.App):
         return True
 
 if __name__ == "__main__":
-    # need an environment variable on Ubuntu to make the menu bars show correctly
+    # Need an environment variable on Ubuntu to make the menu bars show correctly.
     env = os.environ
     if not(('UBUNTU_MENUPROXY' in env) and (env['UBUNTU_MENUPROXY'] == 0)):
         os.environ["UBUNTU_MENUPROXY"] = "0"
