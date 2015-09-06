@@ -54,7 +54,6 @@ relayPin(relayPinInput)
 {
 	motor.attach(motorPin,minPulseWidth,maxPulseWidth); // Create a Servo to control the PWM output of the pin, i.e. the RPM of the engine.
 	pinMode(relayPin,OUTPUT); // We will only flick the relay, so it's a simple output pin.
-	Serial.begin(serialBaudRate); // Start serial comms.
 }	
 
 BrushlessDCMotor::BrushlessDCMotor
@@ -89,7 +88,6 @@ relayPin(relayPinInput)
 {
 	// Can't attach to a servo yet because we don't know the range of pulse widths; this will be done in setPulseWidthRange.
 	pinMode(relayPin,OUTPUT); // We will only flick the relay, so it's a simple output pin.
-	Serial.begin(serialBaudRate); // Start serial comms.
 }
 
 BrushlessDCMotor::BrushlessDCMotor()
@@ -107,7 +105,6 @@ relayPin(-1)
  * setPulseWidthRnage methods (pins should be set before the ranges).
  */
 {
-	Serial.begin(serialBaudRate); // Start serial comms.
 }
 
 void BrushlessDCMotor::setThrustValueRange(int maximumThrustValue)

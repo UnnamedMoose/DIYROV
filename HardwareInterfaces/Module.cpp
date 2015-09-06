@@ -26,6 +26,7 @@ Module::Module(void)
 {
 	identifier = "UNKNOWN_MODULE";
 	currentValue = 0;
+	Serial.begin(serialBaudRate); // Start serial comms.
 }
  
 Module::Module(const char* newIdentifier)
@@ -34,6 +35,7 @@ Module::Module(const char* newIdentifier)
 {
 	identifier = newIdentifier;
 	currentValue = 0;
+	Serial.begin(serialBaudRate); // Start serial comms.
 }
 
 Module::~Module(void){};/* Do nothing special here.*/

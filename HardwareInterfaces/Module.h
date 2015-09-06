@@ -29,7 +29,7 @@ class Module
 		Module(const char* newIdentifier);
 		~Module(void);
 		virtual void setValue(int newValue);
-		int getValue(void);
+		virtual int getValue(void);
 		const char* getIdentifier(void);
 		
 		static const int serialBaudRate;
