@@ -42,11 +42,11 @@ class mainFrame ( wx.Frame ):
 		
 		throttleSizerPort = wx.BoxSizer( wx.VERTICAL )
 		
-		self.throttleDial_portVert = wx.Panel( self.statusDisplay, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		self.throttleDial_portVert.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_3DDKSHADOW ) )
-		self.throttleDial_portVert.SetMinSize( wx.Size( 40,115 ) )
+		self.throttleDial_portVer = wx.Panel( self.statusDisplay, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		self.throttleDial_portVer.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_3DDKSHADOW ) )
+		self.throttleDial_portVer.SetMinSize( wx.Size( 40,115 ) )
 		
-		throttleSizerPort.Add( self.throttleDial_portVert, 1, wx.ALL|wx.EXPAND, 5 )
+		throttleSizerPort.Add( self.throttleDial_portVer, 1, wx.ALL|wx.EXPAND, 5 )
 		
 		self.throttleDial_portHor = wx.Panel( self.statusDisplay, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		self.throttleDial_portHor.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_3DDKSHADOW ) )
@@ -61,11 +61,11 @@ class mainFrame ( wx.Frame ):
 		
 		throttleSizerStbd = wx.BoxSizer( wx.VERTICAL )
 		
-		self.throttleDial_stbdVert = wx.Panel( self.statusDisplay, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-		self.throttleDial_stbdVert.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_3DDKSHADOW ) )
-		self.throttleDial_stbdVert.SetMinSize( wx.Size( 40,115 ) )
+		self.throttleDial_stbdVer = wx.Panel( self.statusDisplay, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+		self.throttleDial_stbdVer.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_3DDKSHADOW ) )
+		self.throttleDial_stbdVer.SetMinSize( wx.Size( 40,115 ) )
 		
-		throttleSizerStbd.Add( self.throttleDial_stbdVert, 1, wx.EXPAND |wx.ALL, 5 )
+		throttleSizerStbd.Add( self.throttleDial_stbdVer, 1, wx.EXPAND |wx.ALL, 5 )
 		
 		self.throttleDial_stbdHor = wx.Panel( self.statusDisplay, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		self.throttleDial_stbdHor.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_3DDKSHADOW ) )
