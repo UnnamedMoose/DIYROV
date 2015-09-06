@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 """
 Created on Sun May 24 16:34:31 2015
@@ -43,18 +44,6 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
             wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
         self.videoFeedPanel.Layout()
         self.videoFeedPanel.SetFocus()
-        
-#        self.cameraCapture = cv2.VideoCapture(self.cameraIndex)
-#        ret, frame = self.cameraCapture.read()
-#        height, width = frame.shape[:2]
-#        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-#        self.bmp = wx.BitmapFromBuffer(width, height, frame)
-#        self.videoFeed = statbmp.GenStaticBitmap(self.videoFeedPanel, wx.ID_ANY,self.bmp)
-#        self.videoFeedPanel.GetSizer().Add( self.videoFeed, 1,
-#            wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
-#        self.videoFeedPanel.Layout()
-#        self.videoFeedPanel.SetFocus()
-#        self.feedOn = True
         
         # initialise the timing function - will send the data to Arduino at a specific interval
         self.frameTimer.Start(int(1.0/self.fps*1000.0))
@@ -114,6 +103,8 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         if self.cameraIndex != int(self.cameraChoice.GetStringSelection()):
             # otherwise close the current camera feed and update the internal field
             self.cameraIndex = int(self.cameraChoice.GetStringSelection())
+            self.feedOn = False
+            self.cameraCapture = 0
         
     def onReconnectVideoFeed( self, event ):
         self.setupCapture()
@@ -168,13 +159,12 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
             ret, frame = self.cameraCapture.read()
             height, width = frame.shape[:2]
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            
+            # update the internal bitmap with the current frame and update the display
             self.bmp = wx.BitmapFromBuffer(width, height, frame)
+            self.videoFeed.SetBitmap(self.bmp)
 
-            self.videoFeed = statbmp.GenStaticBitmap(self.videoFeedPanel, wx.ID_ANY,self.bmp)
-
-            # add to the panel and resize to fit everything
-#            self.videoFeedPanel.GetSizer().Add( self.videoFeed, 1,
-#                wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
+            # resize the feed panel to fit everything
             self.videoFeedPanel.Layout()
             self.videoFeedPanel.SetFocus()
 
