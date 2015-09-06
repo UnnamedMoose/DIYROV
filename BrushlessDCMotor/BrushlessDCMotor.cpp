@@ -17,6 +17,10 @@
 
 #include "BrushlessDCMotor.h"
 
+// Initialise the static members.
+const int BrushlessDCMotor::serialBaudRate = 19200; // Have to repeat const int in initialisation, for some reason.
+
+// Method definitions.
 BrushlessDCMotor::BrushlessDCMotor
 (
 	int motorID,
@@ -51,7 +55,7 @@ relayPin(relayPinInput)
 {
 	motor.attach(motorPin,minPulseWidth,maxPulseWidth); // Create a Servo to control the PWM output of the pin, i.e. the RPM of the engine.
 	pinMode(relayPin,OUTPUT); // We will only flick the relay, so it's a simple output pin.
-	Serial.begin(9600); // Start serial comms.
+	Serial.begin(serialBaudRate); // Start serial comms.
 }	
 
 BrushlessDCMotor::BrushlessDCMotor
@@ -87,7 +91,7 @@ relayPin(relayPinInput)
 {
 	// Can't attach to a servo yet because we don't know the range of pulse widths; this will be done in setPulseWidthRange.
 	pinMode(relayPin,OUTPUT); // We will only flick the relay, so it's a simple output pin.
-	Serial.begin(9600); // Start serial comms.
+	Serial.begin(serialBaudRate); // Start serial comms.
 }
 
 BrushlessDCMotor::BrushlessDCMotor()
@@ -107,7 +111,7 @@ relayPin(-1)
  * setPulseWidthRnage methods (pins should be set before the ranges).
  */
 {
-	Serial.begin(9600); // Start serial comms.
+	Serial.begin(serialBaudRate); // Start serial comms.
 }
 
 void BrushlessDCMotor::setThrustValueRange(int maximumThrustValue)
@@ -187,7 +191,7 @@ void BrushlessDCMotor::setThrust(int newThrust)
 	}
 	
 	currentThrustValue=newThrust;
-	currentPulseWidth = int( minPulseWidth + currentThrustValue/double(maxThrustValue) * (maxPulseWidth-minPulseWidth) ); // Scale the desired throttle to pulse width and change to an int, as expected by the Servo class.
+	currentPulseWidth = int( minPulseWidth + abs(currentThrustValue)/double(maxThrustValue) * (maxPulseWidth-minPulseWidth) ); // Scale the desired throttle to pulse width and change to an int, as expected by the Servo class.
 	Serial.print("    Setting pulse width for motor ");Serial.print(String(motorIdentifier));Serial.print( " to ");Serial.println( String(currentPulseWidth) );
 	
 	motor.writeMicroseconds(currentPulseWidth);

@@ -26,7 +26,7 @@ class BrushlessDCMotor
 		Servo motor;
 		bool reversedThrust;
 	public:
-		BrushlessDCMotor(int motorID, int motorPinInput, int maximumThrustValue, int maximumEnginePulseWidth, int minimumEnginePulseWidth, int relayPinInput);
+		BrushlessDCMotor(int motorID, int maximumThrustValue, int maximumEnginePulseWidth, int minimumEnginePulseWidth, int motorPinInput, int relayPinInput);
 		BrushlessDCMotor(int motorID, int motorPinInput, int relayPinInput);
 		BrushlessDCMotor(void);
 		~BrushlessDCMotor(void);
@@ -36,4 +36,6 @@ class BrushlessDCMotor
 		void setMotorPin(int motorPinInput);
 		void setRelayPin(int relayPinInput);
 		void setThrust(int newThrust);
+		
+		static const int serialBaudRate;
 };
