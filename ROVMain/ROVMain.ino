@@ -41,15 +41,15 @@ const int ON_LED_PIN = 13; // LED on the Arduino board that will be light when t
 const int REFRESH_RATE = 100; // How many milliseconds to wait before checking for input commands.
 
 // Labels that will be used to identify the thrust commands for individual engines.
-const char* ENGINE_LABEL_1 = "portHor"; // Port engine giving horizontal thrust.
-const char* ENGINE_LABEL_2 = "stbdHor"; // Starboard engine giving horizontal thrust.
-const char* ENGINE_LABEL_3 = "portVer"; // Port engine giving vertical thrust.
-const char* ENGINE_LABEL_4 = "stbdVer"; // Starboard engine giving vertical thrust.
+const char* ENGINE_LABEL_1 = "motorPortHor"; // Port engine giving horizontal thrust.
+const char* ENGINE_LABEL_2 = "motorStbdHor"; // Starboard engine giving horizontal thrust.
+const char* ENGINE_LABEL_3 = "motorPortVer"; // Port engine giving vertical thrust.
+const char* ENGINE_LABEL_4 = "motorStbdVer"; // Starboard engine giving vertical thrust.
 
 BrushlessDCMotor engine1, engine2, engine3, engine4; // Interfaces to the brushless motors.
 
-const int MOTOR_1_PIN = 26; // Pin to which the first motor is connected.
-const int RELAY_1_PIN = 6; // Relay that reverses the direction of this motor is attached to this pin.
+const int MOTOR_1_PIN = 9; // Pin to which the first motor is connected.
+const int RELAY_1_PIN = 8; // Relay that reverses the direction of this motor is attached to this pin.
 
 void setup(void)
 /* Prepare to listen to commands over serial and start everything up. */
@@ -60,7 +60,7 @@ void setup(void)
 	engine1 = BrushlessDCMotor(1, 100, 2200, 800, MOTOR_1_PIN, RELAY_1_PIN); // These pule widths correspond to the currently selected electronic speed controller (ESC) - Turningy EA-25A. 
 
 //TODO: initialise all the sensors etc.
-	Serial.begin(9600); // Start serial comms.
+	Serial.begin(engine1.serialBaudRate); // Start serial comms at the same baud rate as the engine.
 	Serial.println("ROV listening to commands."); //TODO: could add VERSION, ROVMODEL etc. consts somewhere so we know what ROV we're using.
 }
 
