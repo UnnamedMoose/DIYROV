@@ -1,4 +1,4 @@
-/* A class that serves as an interface between and Arduino and a brushless DC
+/* A class that serves as an interface between an Arduino and a brushless DC
  * motor and a relay used to reverse the thrust of the engine by reversing the
  * direction of the current flow through it.
  *
@@ -8,22 +8,22 @@
  * @author: Aleksander Lidtke
  * @email: aleksadner.lidtke@gmail.com
  * @url: www.aleksanderlidtke.com
- * @since:  5 Sep 2015
- * @version: 1.0.0
+ * @since:  6 Sep 2015
+ * @version: 2.0.0
  * 
  * CHANGELOG
  *  5 Sep 2015 - 1.0.0 - Alek Lidtke - released the first version.
+ *  6 Sep 2015 - 1.1.0 - Alek Lidtke - changed motor identifers to char* to make
+ * 	the class compatible with the agreed telecommunications protocol.
+ * 	6 Sep 2015 - 2.0.0 - Alek & Artur Lidtke - derived this from the Module class.
  */
 
 #include "BrushlessDCMotor.h"
 
-// Initialise the static members.
-const int BrushlessDCMotor::serialBaudRate = 19200; // Have to repeat const int in initialisation, for some reason.
-
 // Method definitions.
 BrushlessDCMotor::BrushlessDCMotor
 (
-	int motorID,
+	const char* motorID,
 	int maximumThrustValue,
 	int maximumEnginePulseWidth,
 	int minimumEnginePulseWidth,
@@ -31,8 +31,7 @@ BrushlessDCMotor::BrushlessDCMotor
 	int relayPinInput
 )
 :
-motorIdentifier(motorID),
-currentThrustValue(0), // Start with zero thrust to not cut peoples' fingers etc.
+Module(motorID),
 currentPulseWidth(0), // Ditto - zero thrust.
 maxThrustValue(maximumThrustValue),
 maxPulseWidth(maximumEnginePulseWidth),
@@ -55,18 +54,17 @@ relayPin(relayPinInput)
 {
 	motor.attach(motorPin,minPulseWidth,maxPulseWidth); // Create a Servo to control the PWM output of the pin, i.e. the RPM of the engine.
 	pinMode(relayPin,OUTPUT); // We will only flick the relay, so it's a simple output pin.
-	Serial.begin(serialBaudRate); // Start serial comms.
+	//Serial.begin(serialBaudRate); // Start serial comms.
 }	
 
 BrushlessDCMotor::BrushlessDCMotor
 (
-	int motorID,
+	const char* motorID,
 	int motorPinInput,
 	int relayPinInput
 )
 :
-motorIdentifier(motorID),
-currentThrustValue(-1), // Start with zero thrust to not cut peoples' fingers etc.
+Module(motorID),
 currentPulseWidth(-1), // Ditto - zero thrust.
 maxThrustValue(-1),
 maxPulseWidth(-1),
@@ -91,14 +89,12 @@ relayPin(relayPinInput)
 {
 	// Can't attach to a servo yet because we don't know the range of pulse widths; this will be done in setPulseWidthRange.
 	pinMode(relayPin,OUTPUT); // We will only flick the relay, so it's a simple output pin.
-	Serial.begin(serialBaudRate); // Start serial comms.
+	//Serial.begin(serialBaudRate); // Start serial comms.
 }
 
 BrushlessDCMotor::BrushlessDCMotor()
 :
-motorIdentifier(-1),
-currentThrustValue(-1), // Start with zero thrust to not cut peoples' fingers etc.
-currentPulseWidth(-1), // Ditto - zero thrust.
+currentPulseWidth(-1), // Zero thrust.
 maxThrustValue(-1),
 maxPulseWidth(-1),
 minPulseWidth(-1),
@@ -116,7 +112,7 @@ relayPin(-1)
 
 void BrushlessDCMotor::setThrustValueRange(int maximumThrustValue)
 /* Set the maxThrustValue and minThrustValue class fields that describe the
- * range of the currentThrustValue that will be translated to engine thrust.
+ * range of the currentValue that will be translated to engine thrust.
  *
  * @param maximumThrustValue - maximum of the thrust values that will be
  * 	provided to this BrushlessDCMotor.
@@ -166,7 +162,7 @@ void BrushlessDCMotor::setRelayPin(int relayPinInput)
 	pinMode(relayPin,OUTPUT); // We will only flick the relay, so it's a simple output pin.
 }
 
-void BrushlessDCMotor::setThrust(int newThrust)
+void BrushlessDCMotor::setValue(int newThrust)
 /* Set the throttle of the engine to the desired value. This is achieved by setting
  * the width of the pulse on the motorPin to the appropriate value by scaling
  * newThrust, which has to be between 0 and maxThrustValue,
@@ -190,9 +186,9 @@ void BrushlessDCMotor::setThrust(int newThrust)
 		digitalWrite(relayPin,LOW);
 	}
 	
-	currentThrustValue=newThrust;
-	currentPulseWidth = int( minPulseWidth + abs(currentThrustValue)/double(maxThrustValue) * (maxPulseWidth-minPulseWidth) ); // Scale the desired throttle to pulse width and change to an int, as expected by the Servo class.
-	Serial.print("    Setting pulse width for motor ");Serial.print(String(motorIdentifier));Serial.print( " to ");Serial.println( String(currentPulseWidth) );
+	currentValue=newThrust;
+	currentPulseWidth = int( minPulseWidth + abs(currentValue)/double(maxThrustValue) * (maxPulseWidth-minPulseWidth) ); // Scale the desired throttle to pulse width and change to an int, as expected by the Servo class.
+	Serial.print("    Setting pulse width for motor ");Serial.print(identifier);Serial.print( " to ");Serial.println( String(currentPulseWidth) );
 	
 	motor.writeMicroseconds(currentPulseWidth);
 }

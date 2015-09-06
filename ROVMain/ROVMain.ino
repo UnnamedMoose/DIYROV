@@ -9,58 +9,101 @@
  * @author: Aleksander Lidtke
  * @email: alekasdner.lidtke@gmail.com
  * @url: www.aleksanderlidtke.com
- * @since:  5 Sep 2015
- * @version: 1.0.0
+ * @since:  6 Sep 2015
+ * @version: 2.0.0
  * 
  * CHANGELOG
  *  5 Sep 2015 - 1.0.0 - Alek Lidtke - released the first version.
+ *  6 Sep 2015 - 2.0.0 - Alek & Artur Lidtke - derived motor class from the Module class.
  */
 
 // Custom includes.
+#include "Module.h"
 #include "BrushlessDCMotor.h"
 #include "Servo.h"
 
 // Standard c/C++ includes
 #include <stdio.h>
 
-// Function declarations.
+/* =============================================================================
+ * FUNCTION DECLARATIONS.
+ * =============================================================================
+ */
 void parseInput(void);
 boolean getSerial(void);
+void sendSennsorReadings(void);
+
+/* =============================================================================
+ * MOTOR DEFINITIONS.
+ * =============================================================================
+ */
+// Labels that will be used to identify the thrust and action commands for individual engines and actuators.
+const char* ENGINE_LABEL_1 = "motorPortHor"; // Port engine giving horizontal thrust.
+const char* ENGINE_LABEL_2 = "motorStbdHor"; // Starboard engine giving horizontal thrust.
+const char* ENGINE_LABEL_3 = "motorPortVer"; // Port engine giving vertical thrust.
+const char* ENGINE_LABEL_4 = "motorStbdVer"; // Starboard engine giving vertical thrust.
+
+// Motor instances.
+BrushlessDCMotor engine1, engine2, engine3, engine4; // Interfaces to the brushless motors.
+
+// Motor pin assignments.
+const int MOTOR_1_PIN = 9; // Pin to which the first motor is connected.
+const int RELAY_1_PIN = 8; // Relay that reverses the direction of this motor is attached to this pin.
+
+/* =============================================================================
+ * MISC ACTUATOR DEFINITIONS.
+ * =============================================================================
+ */
+const char* LED_LABEL = "forwardLED"; // Whether forward illumination LED is on or of.
+const int FORWARD_LED_PIN = 12; // When this is set HIGH the forward light will switch on.
+
+const int ON_LED_PIN = 13; // LED on the Arduino board that will be lit when the ROV is in the main loop.
+
+/* =============================================================================
+ * SENSOR DEFINITIONS.
+ * =============================================================================
+ */
+// Commands that will be sent to the Arduino to request data from sensors.
+const char* DEPTH_SENSOR_LABEL = "depthReading"; // Used to request data from the depth sensor.
+
+/* =============================================================================
+ * TELECOMMAND PROTOCOL DEFINITION.
+ * =============================================================================
+ */
+const int REFRESH_RATE = 100; // How many milliseconds to wait before checking for input commands.
 
 // Input data buffer
 #define DATABUFFERSIZE 80
 char dataBuffer[DATABUFFERSIZE+1]; // Where the command will be temporarily held. Add 1 for NULL terminator at the end.
 
 // Data chunk delimiters - used to split commands and values that follow them.
-const char INPUT_START_CHAR = '>'; // At the start of every command message.
-const char INPUT_END_CHAR = ';'; // End of the command message.
+const char INPUT_START_CHAR = '>'; // At the start of every command message sent TO the Arduino.
+const char OUTPUT_START_CHAR = '<'; // At the start of every command message sent FROM the Arduino.
+const char END_CHAR = ';'; // End of the command message sent to and from the Arduino.
 const char DATA_DELIMITER[2] = ","; // Splits the command name and value.
 
-// ROV hardware pins and settings.
-const int ON_LED_PIN = 13; // LED on the Arduino board that will be light when the ROV is in the main loop.
-const int REFRESH_RATE = 100; // How many milliseconds to wait before checking for input commands.
+Module* actuators[] = {&engine1, &engine2, &engine3, &engine4};
+Module* sensors[] = {};
 
-// Labels that will be used to identify the thrust commands for individual engines.
-const char* ENGINE_LABEL_1 = "motorPortHor"; // Port engine giving horizontal thrust.
-const char* ENGINE_LABEL_2 = "motorStbdHor"; // Starboard engine giving horizontal thrust.
-const char* ENGINE_LABEL_3 = "motorPortVer"; // Port engine giving vertical thrust.
-const char* ENGINE_LABEL_4 = "motorStbdVer"; // Starboard engine giving vertical thrust.
-
-BrushlessDCMotor engine1, engine2, engine3, engine4; // Interfaces to the brushless motors.
-
-const int MOTOR_1_PIN = 9; // Pin to which the first motor is connected.
-const int RELAY_1_PIN = 8; // Relay that reverses the direction of this motor is attached to this pin.
-
+/* =============================================================================
+ * FUNCTIONS DEFINITIONS.
+ * =============================================================================
+ */
 void setup(void)
 /* Prepare to listen to commands over serial and start everything up. */
 {
 //TODO: do some system checks, like battery level, connections etc.
 
 //TODO: add more motors.
-	engine1 = BrushlessDCMotor(1, 100, 2200, 800, MOTOR_1_PIN, RELAY_1_PIN); // These pule widths correspond to the currently selected electronic speed controller (ESC) - Turningy EA-25A. 
+	engine1 = BrushlessDCMotor(ENGINE_LABEL_1, 100, 2200, 800, MOTOR_1_PIN, RELAY_1_PIN); // These pule widths correspond to the currently selected electronic speed controller (ESC) - Turningy EA-25A. 
+	
+	Serial.begin(engine1.serialBaudRate); // Start serial comms at the same baud rate as the engines.
+		
+	engine1.setPulseWidth(1100); // Arm the motor by setting the control at zero throttle position.
+	delay(25000);
+	Serial.println("Armed the motors.");
 
 //TODO: initialise all the sensors etc.
-	Serial.begin(engine1.serialBaudRate); // Start serial comms at the same baud rate as the engine.
 	Serial.println("ROV listening to commands."); //TODO: could add VERSION, ROVMODEL etc. consts somewhere so we know what ROV we're using.
 }
 
@@ -82,10 +125,10 @@ void loop(void)
 	delay(REFRESH_RATE);
 }
 
-boolean getSerial()
+boolean getSerial(void)
 /* Read input from the serial port and store it in the dataBuffer buffer.
  * The serial input has to conform to a protocol, whereby the messages begin with
- * INPUT_START_CHAR and terminate with INPUT_END_CHAR. The message in between is
+ * INPUT_START_CHAR and terminate with END_CHAR. The message in between is
  * a sequence of strings and integers. Strings represent the destination of the 
  * command (e.g. engine throttle) and integers are the arguments for the command
  * (e.g. throttle value).
@@ -117,7 +160,7 @@ boolean getSerial()
 				break; // Exit the while loop, we're done with this command.
 			}
 		
-			if(incomingbyte==INPUT_END_CHAR) // We've reached the end of this command.
+			if(incomingbyte==END_CHAR) // We've reached the end of this command.
 			{
 				dataBuffer[dataBufferIndex] = 0; // Null terminate the C string
 				placeInBuffer = false; // Don't store anything here any more.
@@ -134,64 +177,53 @@ boolean getSerial()
 	return false; // Something went wrong or we didn't receive an actual command.
 }
 
-void parseInput()
+void parseInput(void)
 /* Extract numbers from the dataBuffer input buffer. */
 {
-  // Variables that indicate which numbers are coming next.
-  boolean engine1Next, engine2Next, engine3Next, engine4Next = false;
-  
-  int currentValue = 0; // Temporary variable that holds the value for the current part of the command.
-  
   // Get the first data token.
   char * token;
   token = strtok (dataBuffer, DATA_DELIMITER);
   
   // Parse the entire dataBuffer of tokens (commands and their value arguments).
+  int nextActuatorIndex = -1; // Index of the actuator value for which is sent in this part of the telecommand.
+  
   while (token != NULL)
   {
-      // Check what value is coming next strings
-      if (strcmp(token, ENGINE_LABEL_1) == 0)
-      {
-        engine1Next = true;
-      }
-      else if (strcmp(token, ENGINE_LABEL_2) == 0)
-      {
-        engine2Next = true;
-      }
-      else if (strcmp(token, ENGINE_LABEL_3) == 0)
-      {
-        engine3Next = true;
-      }
-      else if (strcmp(token, ENGINE_LABEL_4) == 0)
-      {
-        engine4Next = true;
-      }
-      
-      // Check if any of the available numbers are in the token right now.
-      else if (engine1Next)
-      {
-        currentValue = atof(token);
-        Serial.print("ROV trying toset thrust to ");Serial.println( String(currentValue) );
-        engine1.setThrust(currentValue); // Scale the desired throttle to pulse width and actually make the engine spin at the desired RPM.
-        engine1Next = false;
-      }
-      else if (engine2Next)
-      {
-        currentValue = atof(token);
-        engine2Next = false;
-      }
-      else if (engine3Next)
-      {
-        currentValue = atof(token);
-        engine3Next = false;
-      }
-      else if (engine4Next)
-      {
-        currentValue = atof(token);
-        engine4Next = false;
-      }
-      
-      // Get a new token.
-      token = strtok (NULL, DATA_DELIMITER);
+  
+  	// If next actuator index < 0 we have no value to read now
+  	if (nextActuatorIndex >= 0)
+  	{
+  		Serial.print("ROV trying to set value of actuator ");
+  		Serial.print(actuators[nextActuatorIndex]->getIdentifier());
+  		Serial.print(" to ");
+  		Serial.println( String(int(atof(token))) );
+  		
+  		actuators[nextActuatorIndex] -> setValue( int(atof(token)) );
+  		// Indicate that on the next pass there is no value to read.
+  		nextActuatorIndex = -1;
+	}
+	else
+	{	
+	  // Check what value is coming next strings
+	  for(int actuatorI=0;actuatorI<sizeof(actuators)/sizeof(actuators[0]);actuatorI++)
+	  {
+	  	if (strcmp(token, actuators[actuatorI]->getIdentifier()) == 0)
+	  	{
+	  		nextActuatorIndex = actuatorI;
+	  		break;
+	  	}
+	  }
+	}
+        
+	// Continue to the new token.
+	token = strtok (NULL, DATA_DELIMITER);
   }
+}
+
+void sendSennsorReadings(void)
+/* Send a message over the USB bus according to the agreed telecommunications
+ * protocol, containing a series of identifier strings followed by values of the
+ * current sensors.
+ */
+{
 }
