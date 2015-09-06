@@ -197,4 +197,13 @@ void BrushlessDCMotor::setThrust(int newThrust)
 	motor.writeMicroseconds(currentPulseWidth);
 }
 
+void BrushlessDCMotor::setPulseWidth(int pulseWidth)
+/* Manually set the pulse width of the engine.
+ * 
+ * @param pulseWidth - desired pulse width in microseconds.
+ */
+ {
+ 	motor.writeMicroseconds(pulseWidth);
+ }
+ 
 BrushlessDCMotor::~BrushlessDCMotor(void){}; // Do nothing special here.

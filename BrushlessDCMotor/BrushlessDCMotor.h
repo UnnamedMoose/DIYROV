@@ -36,6 +36,7 @@ class BrushlessDCMotor
 		void setMotorPin(int motorPinInput);
 		void setRelayPin(int relayPinInput);
 		void setThrust(int newThrust);
+		void setPulseWidth(int pulseWidth);
 		
 		static const int serialBaudRate;
 };

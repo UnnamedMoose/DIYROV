@@ -58,6 +58,9 @@ void setup(void)
 
 //TODO: add more motors.
 	engine1 = BrushlessDCMotor(1, 100, 2200, 800, MOTOR_1_PIN, RELAY_1_PIN); // These pule widths correspond to the currently selected electronic speed controller (ESC) - Turningy EA-25A. 
+	engine1.setPulseWidth(1100); // Arm the motor by setting the control at zero throttle position.
+	delay(25000);
+	Serial.println("Armed the motors.");
 
 //TODO: initialise all the sensors etc.
 	Serial.begin(engine1.serialBaudRate); // Start serial comms at the same baud rate as the engine.
