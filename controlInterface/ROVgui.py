@@ -8,11 +8,12 @@ Created on Sun May 24 16:34:31 2015
 
 import ROVgui_mainFrame
 import throttleDial
+import communicationProtocol
 
 import wx
 from wx.lib import statbmp
 import cv2
-import os, sys, glob
+import os
 import serial
 
 class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
@@ -50,13 +51,27 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         
         # initialise throttle indicators
         self.throttleDial_portHor = throttleDial.Throttle(self.throttleDial_portHor, -1,sizeTuple=(40,115))
-        self.throttleDial_portVert = throttleDial.Throttle(self.throttleDial_portVert, -1,sizeTuple=(40,115))
+        self.throttleDial_portVer = throttleDial.Throttle(self.throttleDial_portVer, -1,sizeTuple=(40,115))
         self.throttleDial_stbdHor = throttleDial.Throttle(self.throttleDial_stbdHor, -1,sizeTuple=(40,115))
-        self.throttleDial_stbdVert = throttleDial.Throttle(self.throttleDial_stbdVert, -1,sizeTuple=(40,115))
+        self.throttleDial_stbdVer = throttleDial.Throttle(self.throttleDial_stbdVer, -1,sizeTuple=(40,115))
         
         # update the ports available at start-up
-        self.updateActivePorts()
+        self.updatePorts()
         self.portChoice.SetSelection(0)
+        
+        # keeps the names and values of all control parameters
+        self.controlParameters = {
+            'motorPortVer':0, # throttle of the port vert motor <-100,100>
+            'motorPortHor':0,
+            'motorStbdVer':0,
+            'motorStbdHor':0,
+            'ledOn':False, # forward illumination LED on/off [True,False]
+            }
+        
+        # names and values of sensor readings
+        self.sensorParameters = {
+            'depth':0, # depth reading [m]
+            }
     
     def onChoseSerialPort( self, event ):
         """ picks up the newly selected port and attempts to connect to Arduino via it """
@@ -94,8 +109,8 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
             self.currentPort = 'None'
     
     def onUpdatePorts( self, event ):
-        """ Update the available serial ports """
-        self.updateActivePorts()
+        # call the update ports method - need a wrapper to be able to call it during initialisation
+        self.updatePorts()
     
     def onChoseCameraIndex( self, event ):
         """ Update the camera index selection """
@@ -104,24 +119,27 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
             # otherwise close the current camera feed and update the internal field
             self.cameraIndex = int(self.cameraChoice.GetStringSelection())
             self.feedOn = False
+            self.cameraCapture.release()
             self.cameraCapture = 0
         
     def onReconnectVideoFeed( self, event ):
         self.setupCapture()
             
-    def getDepth(self):
-        """ Should access the controller class and return current depth sensor reading """
-        return 0.0
-    
     def onClose( self, event ):
         # close the serial port before terminating, need to make sure it isn't left hanging
         if self.portOpen:
             self.arduinoSerialConnection.close()
+        # release the video capture object
+        if self.feedOn:
+            self.cameraCapture.release()
         self.Destroy()
 
     def onUpdateState ( self, event ):
         """ Main function responsible for sending the desired system state
         to the Arduino and updating the display """
+        
+        # read the sensor values
+        self.updateSensorReadings()
         
         # update the video feed
         self.getNewFrame()
@@ -130,23 +148,39 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         if self.portOpen:
             # make sure the connection has not been broken
             if self.checkConnection():
-                pass
                 # send the message
-#                self.arduinoSerialConnection.write(self.inputStartChar + 'deltaServo'
-#                    + self.dataDelimiter + str(self.demandSlider.GetValue()+90) + self.inputEndChar)
-                
-                # store the data point in the plot
-                # distinguish between first and subsequent messages
-#                if len(self.plot.datat) == 0:
-#                    self.plot.update( 0 + int(1.0/self.updateFrequency),
-#                                 self.demandSlider.GetValue() )
-#                                 
-#                else:
-#                    self.plot.update( self.plot.datat[-1] + int(1.0/self.updateFrequency),
-#                                 self.demandSlider.GetValue() )
+                communicationProtocol.sendMessage(self.arduinoSerialConnection, self.controlParameters)
     
     #=================================
     # non-event funtion declarations
+    
+    def updatePorts(self):
+        """ Checks the list of open serial ports and updates the internal list
+        and the options shown in the dropdown selection menu. """
+        
+        # check what ports are currently open
+        ports = communicationProtocol.getActivePorts()
+        
+        # save current selection
+        currentSelection = self.portChoice.GetStringSelection()
+        
+        # Remove the current options
+        for i in range(len(self.portChoice.GetStrings())-1,-1,-1):
+            self.portChoice.Delete(i)
+
+        # add the newly found ports
+        self.portChoice.Append('None')
+        for port in ports:
+            self.portChoice.Append(port)
+            
+        # attempt to return to the last selected port, use None if it's not found
+        if currentSelection in ports:
+            for i in range(len(ports)):
+                if ports[i] == currentSelection:
+                    self.portChoice.SetSelection(i+1)
+        else:
+            self.portChoice.SetSelection(0)
+            self.currentSelection = 'None'
     
     def setupCapture(self):
         """ Creates the camera capture object used to retrieve new frames """
@@ -192,7 +226,8 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
                 height, width = frame.shape[:2]
                 
                 # put on overlay of telemetry
-                cv2.putText(frame,'DEPTH: {:6.2f} m'.format(self.getDepth()), (int(0.05*width),int(0.05*height)),
+                cv2.putText(frame,'DEPTH: {:6.2f} m'.format(self.sensorParameters['depth']),
+                            (int(0.05*width),int(0.05*height)),
                             cv2.FONT_HERSHEY_PLAIN, 1, self.HUDcolour, 2) # size, colour, thickness modifier
                 
                 # put on tactical overlay
@@ -209,8 +244,7 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
                 self.feedOn = False
                 self.cameraCapture = 0
                 
-                wx.MessageBox('Video feed interrupted', 'Error', 
-                    wx.OK | wx.ICON_ERROR)
+                wx.MessageBox('Video feed interrupted', 'Error', wx.OK | wx.ICON_ERROR)
                     
     def checkConnection( self ):
         """ Checks if the Arduino is still connected. """
@@ -238,54 +272,11 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         else:
             return True
     
-    def updateActivePorts( self ):
-        """ Checks the list of open serial ports and updates the internal list
-        and the options shown in the dropdown selection menu. """
-        
-        # find the open ports - main part of the code from:
-        # http://stackoverflow.com/questions/12090503/listing-available-com-ports-with-python
-        if sys.platform.startswith('win'):
-            candidatePorts = ['COM' + str(i + 1) for i in range(256)]
+    def updateSensorReadings(self):
+        """ Go over each sensor and get its reading, updating the internally stored values """
+        # TODO this is just a dummy
+        self.sensorParameters['depth'] = 0
     
-        elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
-            candidatePorts = glob.glob('/dev/tty[A-Za-z]*')
-    
-        elif sys.platform.startswith('darwin'):
-            candidatePorts = glob.glob('/dev/tty.*')
-    
-        else:
-            raise EnvironmentError('Unsupported platform')
-    
-        ports = []
-        for port in candidatePorts:
-            try:
-                s = serial.Serial(port)
-                s.close()
-                ports.append(port)
-            except (OSError, serial.SerialException):
-                pass
-        
-        # save current selection
-        currentSelection = self.portChoice.GetStringSelection()
-        
-        # Remove the current options
-        for i in range(len(self.portChoice.GetStrings())-1,-1,-1):
-            self.portChoice.Delete(i)
-
-        # add the newly found ports
-        self.portChoice.Append('None')
-        for port in ports:
-            self.portChoice.Append(port)
-            
-        # attempt to return to the last selected port, use None if it's not found
-        if currentSelection in ports:
-            for i in range(len(ports)):
-                if ports[i] == currentSelection:
-                    self.portChoice.SetSelection(i+1)
-        else:
-            self.portChoice.SetSelection(0)
-            self.currentSelection = 'None'
-
 # implements the GUI class to run a wxApp
 class rovGuiApp(wx.App):
     def OnInit(self):
