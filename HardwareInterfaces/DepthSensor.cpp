@@ -1,20 +1,4 @@
-/* A class that serves as an interface between an Arduino and a pressure sensor,
- * readings of which will be converted into depth.
- *
- * This header and the source have to be placed in the Arduino libraries' directory,
- * e.g. /usr/share/arduino/libraries/ in DepthSensor folder.
- *
- * @author: Aleksander Lidtke
- * @email: aleksadner.lidtke@gmail.com
- * @url: www.aleksanderlidtke.com
- * @since:  6 Sep 2015
- * @version: 1.0.0
- * 
- * CHANGELOG
- *  6 Sep 2015 - 1.0.0 - Alek Lidtke - released the first version.
- */
-
-#include "DepthSensor.h" // Basic Arduino stuff.
+#include "DepthSensor.h"
 
 DepthSensor::DepthSensor(const char* sensorID, int sensorInputPin)
 :

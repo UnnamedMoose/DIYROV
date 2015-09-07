@@ -1,23 +1,3 @@
-/* A class that serves as an interface between an Arduino and a brushless DC
- * motor and a relay used to reverse the thrust of the engine by reversing the
- * direction of the current flow through it.
- *
- * This source and the header have to be placed in the Arduino libraries' directory,
- * e.g. /usr/share/arduino/libraries/ in BrushlessDCMotor folder.
- *
- * @author: Aleksander Lidtke
- * @email: aleksadner.lidtke@gmail.com
- * @url: www.aleksanderlidtke.com
- * @since:  6 Sep 2015
- * @version: 2.0.0
- * 
- * CHANGELOG
- *  5 Sep 2015 - 1.0.0 - Alek Lidtke - released the first version.
- *  6 Sep 2015 - 1.1.0 - Alek Lidtke - changed motor identifers to char* to make
- * 	the class compatible with the agreed telecommunications protocol.
- * 	6 Sep 2015 - 2.0.0 - Alek & Artur Lidtke - derived this from the Module class.
- */
-
 #include "BrushlessDCMotor.h"
 
 // Method definitions.
