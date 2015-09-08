@@ -38,18 +38,17 @@ void sendSensorReadings(void);
  * MOTOR DEFINITIONS.
  * =============================================================================
  */
-// Labels that will be used to identify the thrust and action commands for individual engines and actuators.
-const char* ENGINE_LABEL_1 = "motorPortHor"; // Port engine giving horizontal thrust.
-const char* ENGINE_LABEL_2 = "motorStbdHor"; // Starboard engine giving horizontal thrust.
-const char* ENGINE_LABEL_3 = "motorPortVer"; // Port engine giving vertical thrust.
-const char* ENGINE_LABEL_4 = "motorStbdVer"; // Starboard engine giving vertical thrust.
+// These values correspond to the currently selected electronic speed controller (ESC) - Turningy EA-25a.
+#define MOTOR_ARM_PULSE_WIDTH 11000 // Pulse width in microseconds corresponding to zero throttle; used to arm the motors.
+#define MOTOR_MAX_PULSE_WIDTH 2200 // Maximum pulse width of the motor in microseconds.
+#define MOTOR_MIN_PULSE_WIDTH 800 // Minimum pulse width of the motor.
+#define THROTTLE_STEPS 100 // How many levels of throttle we want to have.
 
-// Motor instances.
-BrushlessDCMotor engine1, engine2, engine3, engine4; // Interfaces to the brushless motors.
-
-// Motor pin assignments.
-const int MOTOR_1_PIN = 9; // Pin to which the first motor is connected.
-const int RELAY_1_PIN = 8; // Relay that reverses the direction of this motor is attached to this pin.
+// Pins are pairs of close-by pins with PWM and digital ones.
+BrushlessDCMotor engine1 = BrushlessDCMotor("motorPortHor", THROTTLE_STEPS, MOTOR_MAX_PULSE_WIDTH, MOTOR_MIN_PULSE_WIDTH, 9, 8);
+BrushlessDCMotor engine2 = BrushlessDCMotor("motorStbdHor", THROTTLE_STEPS, MOTOR_MAX_PULSE_WIDTH, MOTOR_MIN_PULSE_WIDTH, 6, 7);
+BrushlessDCMotor engine3 = BrushlessDCMotor("motorPortVer", THROTTLE_STEPS, MOTOR_MAX_PULSE_WIDTH, MOTOR_MIN_PULSE_WIDTH, 5, 4);
+BrushlessDCMotor engine4 = BrushlessDCMotor("motorStbdVer", THROTTLE_STEPS, MOTOR_MAX_PULSE_WIDTH, MOTOR_MIN_PULSE_WIDTH, 3, 2);
 
 /* =============================================================================
  * MISC ACTUATOR DEFINITIONS.
@@ -64,10 +63,8 @@ const int ON_LED_PIN = 13; // LED on the Arduino board that will be lit when the
  * SENSOR DEFINITIONS.
  * =============================================================================
  */
-// Commands that will be sent to the Arduino to request data from sensors.
-const char* DEPTH_SENSOR_LABEL = "depthReading"; // Used to request data from the depth sensor.
-
-DepthSensor depthSensor;
+DepthSensor depthSensor = DepthSensor("depthReading",15); // For now a mock sensor.
+DepthSensor depthSensor2 = DepthSensor("depthReading2",16); // Another mock sensor to make sure the message concatenation works well.
 
 /* =============================================================================
  * TELECOMMAND PROTOCOL DEFINITION.
@@ -87,7 +84,7 @@ const char END_CHAR = ';'; // End of the command message sent to and from the Ar
 const char DATA_DELIMITER[2] = ","; // Splits the command name and value. For some reason has to be size 2.
 
 Module* actuators[] = {&engine1, &engine2, &engine3, &engine4};
-Module* sensors[] = {&depthSensor};
+Module* sensors[] = {&depthSensor, &depthSensor2};
 
 /* =============================================================================
  * FUNCTIONS DEFINITIONS.
@@ -96,18 +93,20 @@ Module* sensors[] = {&depthSensor};
 void setup(void)
 /* Prepare to listen to commands over serial and start everything up. */
 {
-//TODO: do some system checks, like battery level, connections etc.
+	//TODO: do some system checks, like battery level, connections etc.
 
-//TODO: add more motors.
-	engine1 = BrushlessDCMotor(ENGINE_LABEL_1, 100, 2200, 800, MOTOR_1_PIN, RELAY_1_PIN); // These pule widths correspond to the currently selected electronic speed controller (ESC) - Turningy EA-
-	Serial.begin(engine1.serialBaudRate); // Start serial comms at the same baud rate as the engines.
+	// Start serial comms at the same baud rate as the engines.
+	Serial.begin(engine1.serialBaudRate);
 		
-	engine1.setPulseWidth(1100); // Arm the motor by setting the control at zero throttle position.
-	delay(25000);
+	// Arm the motors by setting the control at zero throttle position.
+	engine1.setPulseWidth(MOTOR_ARM_PULSE_WIDTH);
+	engine2.setPulseWidth(MOTOR_ARM_PULSE_WIDTH);
+	engine3.setPulseWidth(MOTOR_ARM_PULSE_WIDTH);
+	engine4.setPulseWidth(MOTOR_ARM_PULSE_WIDTH);
+	delay(25000); // Keep the throttle in zero position for a while to arm the motors.
 	Serial.println("Armed the motors.");
-
-//TODO: initialise all the sensors etc.
-	depthSensor = DepthSensor("depthReading",15);
+	
+	//TODO: do whatever else operations we want to do at start-up.
 	
 	Serial.println("ROV listening to commands."); //TODO: could add VERSION, ROVMODEL etc. consts somewhere so we know what ROV we're using.
 }
