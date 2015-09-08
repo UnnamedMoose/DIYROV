@@ -20,6 +20,7 @@
 // Custom includes.
 #include "Module.h"
 #include "BrushlessDCMotor.h"
+#include "DepthSensor.h"
 #include "Servo.h"
 
 // Standard c/C++ includes
@@ -31,7 +32,7 @@
  */
 void parseInput(void);
 boolean getSerial(void);
-void sendSennsorReadings(void);
+void sendSensorReadings(void);
 
 /* =============================================================================
  * MOTOR DEFINITIONS.
@@ -66,24 +67,27 @@ const int ON_LED_PIN = 13; // LED on the Arduino board that will be lit when the
 // Commands that will be sent to the Arduino to request data from sensors.
 const char* DEPTH_SENSOR_LABEL = "depthReading"; // Used to request data from the depth sensor.
 
+DepthSensor depthSensor;
+
 /* =============================================================================
  * TELECOMMAND PROTOCOL DEFINITION.
  * =============================================================================
  */
 const int REFRESH_RATE = 100; // How many milliseconds to wait before checking for input commands.
 
-// Input data buffer
+// Input and output data buffers.
 #define DATABUFFERSIZE 80
-char dataBuffer[DATABUFFERSIZE+1]; // Where the command will be temporarily held. Add 1 for NULL terminator at the end.
+char inputDataBuffer[DATABUFFERSIZE+1]; // Where the received command will be temporarily held. Add 1 for NULL terminator at the end.
+String outputDataBuffer = ""; // We'll store a message here before sending it.
 
 // Data chunk delimiters - used to split commands and values that follow them.
 const char INPUT_START_CHAR = '>'; // At the start of every command message sent TO the Arduino.
 const char OUTPUT_START_CHAR = '<'; // At the start of every command message sent FROM the Arduino.
 const char END_CHAR = ';'; // End of the command message sent to and from the Arduino.
-const char DATA_DELIMITER[2] = ","; // Splits the command name and value.
+const char DATA_DELIMITER[2] = ","; // Splits the command name and value. For some reason has to be size 2.
 
 Module* actuators[] = {&engine1, &engine2, &engine3, &engine4};
-Module* sensors[] = {};
+Module* sensors[] = {&depthSensor};
 
 /* =============================================================================
  * FUNCTIONS DEFINITIONS.
@@ -95,8 +99,7 @@ void setup(void)
 //TODO: do some system checks, like battery level, connections etc.
 
 //TODO: add more motors.
-	engine1 = BrushlessDCMotor(ENGINE_LABEL_1, 100, 2200, 800, MOTOR_1_PIN, RELAY_1_PIN); // These pule widths correspond to the currently selected electronic speed controller (ESC) - Turningy EA-25A. 
-	
+	engine1 = BrushlessDCMotor(ENGINE_LABEL_1, 100, 2200, 800, MOTOR_1_PIN, RELAY_1_PIN); // These pule widths correspond to the currently selected electronic speed controller (ESC) - Turningy EA-
 	Serial.begin(engine1.serialBaudRate); // Start serial comms at the same baud rate as the engines.
 		
 	engine1.setPulseWidth(1100); // Arm the motor by setting the control at zero throttle position.
@@ -104,6 +107,8 @@ void setup(void)
 	Serial.println("Armed the motors.");
 
 //TODO: initialise all the sensors etc.
+	depthSensor = DepthSensor("depthReading",15);
+	
 	Serial.println("ROV listening to commands."); //TODO: could add VERSION, ROVMODEL etc. consts somewhere so we know what ROV we're using.
 }
 
@@ -115,18 +120,21 @@ void loop(void)
 	// Get control inputs.
 	if ( Serial.available())
 		{
-		if (getSerial()) // If we got a command over serial read it into the dataBuffer char array.
+		if (getSerial()) // If we got a command over serial read it into the inputDataBuffer char array.
 		{
 		  parseInput(); // Parse the telecommand.
 		}
 	}
 
+	// Periodically send readings from all the sensors over serial.
+	sendSensorReadings();
+	
 	// Reduce rate at which stuff happens.
 	delay(REFRESH_RATE);
 }
 
 boolean getSerial(void)
-/* Read input from the serial port and store it in the dataBuffer buffer.
+/* Read input from the serial port and store it in the inputDataBuffer buffer.
  * The serial input has to conform to a protocol, whereby the messages begin with
  * INPUT_START_CHAR and terminate with END_CHAR. The message in between is
  * a sequence of strings and integers. Strings represent the destination of the 
@@ -162,14 +170,14 @@ boolean getSerial(void)
 		
 			if(incomingbyte==END_CHAR) // We've reached the end of this command.
 			{
-				dataBuffer[dataBufferIndex] = 0; // Null terminate the C string
+				inputDataBuffer[dataBufferIndex] = 0; // Null terminate the C string
 				placeInBuffer = false; // Don't store anything here any more.
 				dataBufferIndex = 0; // Make sure next command gets written to the start of the buffer.
 				return true; // Say that we've parsed the whole command.
 			}
 			else if (incomingbyte!=INPUT_START_CHAR) // Simply record the telecommand byte.
 			{
-				dataBuffer[dataBufferIndex++] = incomingbyte;
+				inputDataBuffer[dataBufferIndex++] = incomingbyte;
 			}
 		}
 	}
@@ -178,13 +186,13 @@ boolean getSerial(void)
 }
 
 void parseInput(void)
-/* Extract numbers from the dataBuffer input buffer. */
+/* Extract commands and corresponding numbers from the inputDataBuffer input buffer. */
 {
   // Get the first data token.
   char * token;
-  token = strtok (dataBuffer, DATA_DELIMITER);
+  token = strtok (inputDataBuffer, DATA_DELIMITER);
   
-  // Parse the entire dataBuffer of tokens (commands and their value arguments).
+  // Parse the entire inputDataBuffer of tokens (commands and their value arguments).
   int nextActuatorIndex = -1; // Index of the actuator value for which is sent in this part of the telecommand.
   
   while (token != NULL)
@@ -220,10 +228,20 @@ void parseInput(void)
   }
 }
 
-void sendSennsorReadings(void)
+void sendSensorReadings(void)
 /* Send a message over the USB bus according to the agreed telecommunications
  * protocol, containing a series of identifier strings followed by values of the
  * current sensors.
  */
 {
+	outputDataBuffer[0] = OUTPUT_START_CHAR; // Start the message.
+	for(int i=0;i<sizeof(sensors)/sizeof(sensors[0]);i++)
+	{
+		outputDataBuffer += String( sensors[i]->getValue() );
+		outputDataBuffer += DATA_DELIMITER;
+	}
+	outputDataBuffer += END_CHAR; // Terminate the message.
+	
+	Serial.println( outputDataBuffer ); // Send the formatted message.
+	outputDataBuffer = ""; // Restart the buffer so it's clean before sending the next message.
 }
