@@ -236,8 +236,13 @@ void sendSensorReadings(void)
 	outputDataBuffer[0] = OUTPUT_START_CHAR; // Start the message.
 	for(int i=0;i<sizeof(sensors)/sizeof(sensors[0]);i++)
 	{
-		outputDataBuffer += String( sensors[i]->getValue() );
+		outputDataBuffer += String( sensors[i]->getIdentifier() );
 		outputDataBuffer += DATA_DELIMITER;
+		outputDataBuffer += String( sensors[i]->getValue() );
+		if(i<sizeof(sensors)/sizeof(sensors[0])-1) // Don't add a delimiter after the last sensor.
+		{
+			outputDataBuffer += DATA_DELIMITER;
+		}
 	}
 	outputDataBuffer += END_CHAR; // Terminate the message.
 	
