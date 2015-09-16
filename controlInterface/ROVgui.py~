@@ -65,12 +65,12 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
             'motorPortHor':0,
             'motorStbdVer':0,
             'motorStbdHor':0,
-            'forwardLED':False, # forward illumination LED on/off [True,False]
+            'ledOn':False, # forward illumination LED on/off [True,False]
             }
         
         # names and values of sensor readings
         self.sensorParameters = {
-            'depthReading':0, # depth reading [m]
+            'depth':0, # depth reading [m]
             }
     
     def onChoseSerialPort( self, event ):
@@ -226,7 +226,7 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
                 height, width = frame.shape[:2]
                 
                 # put on overlay of telemetry
-                cv2.putText(frame,'DEPTH: {:6.2f} m'.format(self.sensorParameters['depthReading']),
+                cv2.putText(frame,'DEPTH: {:6.2f} m'.format(self.sensorParameters['depth']),
                             (int(0.05*width),int(0.05*height)),
                             cv2.FONT_HERSHEY_PLAIN, 1, self.HUDcolour, 2) # size, colour, thickness modifier
                 
@@ -274,16 +274,8 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
     
     def updateSensorReadings(self):
         """ Go over each sensor and get its reading, updating the internally stored values """
-        # get the most recent line from the serial port
-        line = self.arduinoSerialConnection.readline()
-        
-        # pass on to the parser
-        readings = communicationProtocol.readMessage(line)
-        
-        # update sensor and other readings
-#        self.sensorParameters['depthReading'] = 0
-        for readingKey in readings:
-            self.sensorParameters[readingKey] = readings[readingKey]
+        # TODO this is just a dummy
+        self.sensorParameters['depth'] = 0
     
 # implements the GUI class to run a wxApp
 class rovGuiApp(wx.App):
