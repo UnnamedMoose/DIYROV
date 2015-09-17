@@ -83,14 +83,12 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
                     # close any open ports if present
                     if self.portOpen:
                         self.arduinoSerialConnection.close()
-                    
+    
                     self.arduinoSerialConnection = serial.Serial(self.portChoice.GetStringSelection(),
                                                                  19200, timeout = 2)
-                    
                     if self.checkConnection():
                         self.portOpen = True
                         self.currentPort = self.portChoice.GetStringSelection()
-                        
                         # set the initial state
                         self.updateState()
                           
@@ -118,9 +116,11 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         if self.cameraIndex != int(self.cameraChoice.GetStringSelection()):
             # otherwise close the current camera feed and update the internal field
             self.cameraIndex = int(self.cameraChoice.GetStringSelection())
-            self.feedOn = False
-            self.cameraCapture.release()
-            self.cameraCapture = 0
+            # do nothing if the camera is off
+            if self.feedOn:
+                self.feedOn = False
+                self.cameraCapture.release()
+                self.cameraCapture = 0
         
     def onReconnectVideoFeed( self, event ):
         self.setupCapture()
@@ -135,21 +135,26 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         self.Destroy()
 
     def onUpdateState ( self, event ):
+        """ Calls the main function, only used to handle events """
+        self.updateState()
+        
+    def updateState(self):
         """ Main function responsible for sending the desired system state
         to the Arduino and updating the display """
-        
-        # read the sensor values
-        self.updateSensorReadings()
-        
-        # update the video feed
-        self.getNewFrame()
         
         # attempt to communicate with the Arduino
         if self.portOpen:
             # make sure the connection has not been broken
             if self.checkConnection():
+                # read the sensor values
+                self.updateSensorReadings()
+        
                 # send the message
-                communicationProtocol.sendMessage(self.arduinoSerialConnection, self.controlParameters)
+                communicationProtocol.sendMessage(self.arduinoSerialConnection,
+                                                  self.controlParameters)
+        
+        # update the video feed
+        self.getNewFrame()
     
     #=================================
     # non-event funtion declarations
@@ -208,7 +213,7 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         except AttributeError:
             self.feedOn = False
             
-            wx.MessageBox('Could not start video feed', 'Error', 
+            wx.MessageBox('Could not start video feed!', 'Error', 
                     wx.OK | wx.ICON_ERROR)
     
     def getNewFrame(self):
@@ -254,7 +259,7 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
             self.arduinoSerialConnection.inWaiting()
         except:
             testMsgGood = False
-        
+
         if not self.arduinoSerialConnection or not self.arduinoSerialConnection.readable() or not testMsgGood:
             wx.MessageBox('Arduino isn\'t readable! Check the connection...', 'Error', 
                   wx.OK | wx.ICON_ERROR)
@@ -281,7 +286,6 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         readings = communicationProtocol.readMessage(line)
         
         # update sensor and other readings
-#        self.sensorParameters['depthReading'] = 0
         for readingKey in readings:
             self.sensorParameters[readingKey] = readings[readingKey]
     

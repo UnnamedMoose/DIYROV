@@ -233,7 +233,7 @@ void sendSensorReadings(void)
  * current sensors.
  */
 {
-	outputDataBuffer[0] = OUTPUT_START_CHAR; // Start the message.
+	outputDataBuffer += OUTPUT_START_CHAR; // Start the message.
 	for(int i=0;i<sizeof(sensors)/sizeof(sensors[0]);i++)
 	{
 		outputDataBuffer += String( sensors[i]->getIdentifier() );
