@@ -45,7 +45,8 @@ void sendSensorReadings(void);
 #define THROTTLE_STEPS 100 // How many levels of throttle we want to have.
 
 // Pins are pairs of close-by pins with PWM and digital ones.
-BrushlessDCMotor engine1 = BrushlessDCMotor("motorPortHor", THROTTLE_STEPS, MOTOR_MAX_PULSE_WIDTH, MOTOR_MIN_PULSE_WIDTH, 9, 8);
+BrushlessDCMotor engine1 = BrushlessDCMotor("motorPortHor", THROTTLE_STEPS, MOTOR_MAX_PULSE_WIDTH,
+	MOTOR_MIN_PULSE_WIDTH, MOTOR_ARM_PULSE_WIDTH, 9, 8);
 /*BrushlessDCMotor engine2 = BrushlessDCMotor("motorStbdHor", THROTTLE_STEPS, MOTOR_MAX_PULSE_WIDTH, MOTOR_MIN_PULSE_WIDTH, 6, 7);
 BrushlessDCMotor engine3 = BrushlessDCMotor("motorPortVer", THROTTLE_STEPS, MOTOR_MAX_PULSE_WIDTH, MOTOR_MIN_PULSE_WIDTH, 5, 4);
 BrushlessDCMotor engine4 = BrushlessDCMotor("motorStbdVer", THROTTLE_STEPS, MOTOR_MAX_PULSE_WIDTH, MOTOR_MIN_PULSE_WIDTH, 3, 2);
@@ -93,21 +94,24 @@ Module* sensors[] = {&depthSensor, &depthSensor2};
 void setup(void)
 /* Prepare to listen to commands over serial and start everything up. */
 {
-	//outsideMotor1.attach(9,800,2200);
-	engine1.armTheMotor();
 	//TODO: do some system checks, like battery level, connections etc.
 
 	// Start serial comms at the same baud rate as the engines.
-	Serial.begin(19200);//engine1.serialBaudRate);
-
-	// Arm the motors by setting the control at zero throttle position.
-//outsideMotor1.writeMicroseconds(MOTOR_ARM_PULSE_WIDTH);
-	engine1.setPulseWidth(MOTOR_ARM_PULSE_WIDTH);
-	/*engine2.setPulseWidth(MOTOR_ARM_PULSE_WIDTH);
-	engine3.setPulseWidth(MOTOR_ARM_PULSE_WIDTH);
-	engine4.setPulseWidth(MOTOR_ARM_PULSE_WIDTH);*/
-	delay(25000); // Keep the throttle in zero position for a while to arm the motors.
-	Serial.println("Armed the motors.");
+	Serial.begin(engine1.serialBaudRate);
+	
+	// Arm all the modules.
+	int setupDelay(0);
+	for(int i=0;i<sizeof(actuators)/sizeof(actuators[0]);i++)
+	{
+		int delayRequested = actuators[i]->arm();
+		if (delayRequested > setupDelay) setupDelay = delayRequested;
+	}
+	for(int i=0;i<sizeof(sensors)/sizeof(sensors[0]);i++)
+	{
+		int delayRequested = sensors[i]->arm();
+		if (delayRequested > setupDelay) setupDelay = delayRequested;
+	}
+	delay(setupDelay); // Wait for as long as required by the slowest arming module.
 	
 	//TODO: do whatever else operations we want to do at start-up.
 	
@@ -119,12 +123,12 @@ void loop(void)
 	// Light the LED to show the ROV is working and executing the main loop.
 	digitalWrite(ON_LED_PIN, HIGH);
 
-	// Get control inputs.
+	// Get and set control inputs.
 	if ( Serial.available())
-		{
+	{
 		if (getSerial()) // If we got a command over serial read it into the inputDataBuffer char array.
 		{
-		  parseInput(); // Parse the telecommand.
+			parseInput(); // Parse the telecommand and set appropriate actuator values.
 		}
 	}
 

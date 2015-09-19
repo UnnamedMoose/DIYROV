@@ -28,23 +28,23 @@ class BrushlessDCMotor : public Module
 {
 	private:
 		int currentPulseWidth, maxThrustValue;
-		int maxPulseWidth, minPulseWidth;
+		int maxPulseWidth, minPulseWidth, armPulseWidth;
 		bool reversedThrust;
 		int motorPin, relayPin;
 	public:
 		Servo motor;
-		BrushlessDCMotor(const char* motorID, int maximumThrustValue, int maximumEnginePulseWidth, int minimumEnginePulseWidth, int motorPinInput, int relayPinInput);
+		BrushlessDCMotor(const char* motorID, int maximumThrustValue, int maximumEnginePulseWidth, int minimumEnginePulseWidth, int armEnginePulseWidth, int motorPinInput, int relayPinInput);
 		BrushlessDCMotor(const char* motorID, int motorPinInput, int relayPinInput);
 		BrushlessDCMotor(void);
 		~BrushlessDCMotor(void);
 		
-		void armTheMotor(void);
 		void setThrustValueRange(int maximumThrustValue);
 		void setPulseWidthRange(int maximumEnginePulseWidth, int minimumEnginePulseWidth);
 		void setMotorPin(int motorPinInput);
 		void setRelayPin(int relayPinInput);
 		void setValue(int newThrust); // Override parent method.
 		void setPulseWidth(int pulseWidth);
+		int arm(); // Override the parent method.
 };
 
 #endif

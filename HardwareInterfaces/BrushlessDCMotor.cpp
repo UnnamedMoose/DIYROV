@@ -7,6 +7,7 @@ BrushlessDCMotor::BrushlessDCMotor
 	int maximumThrustValue,
 	int maximumEnginePulseWidth,
 	int minimumEnginePulseWidth,
+	int armEnginePulseWidth,
 	int motorPinInput,
 	int relayPinInput
 )
@@ -16,6 +17,7 @@ currentPulseWidth(0), // Ditto - zero thrust.
 maxThrustValue(maximumThrustValue),
 maxPulseWidth(maximumEnginePulseWidth),
 minPulseWidth(minimumEnginePulseWidth),
+armPulseWidth(armEnginePulseWidth),
 reversedThrust(false), // By default the thrust isn't reversed.
 motorPin(motorPinInput),
 relayPin(relayPinInput)
@@ -146,7 +148,7 @@ void BrushlessDCMotor::setValue(int newThrust)
  * 	scaled to the pusle width between minPulseWidth and	maxPulseWidth class
  * 	attributes. newThrust can be negative to indicate reverse thrust direction.
  */
-{
+{//TODO: when reversing thrust go through the zero throttle position to avoid burning shit.
 	if(newThrust<0){ // < 0, if we set thrust to 0 make sure we're working forward again, it is likely we will go reverse->0->forward.
 		reversedThrust=true; // Keep track of the fact we're working backwards.
 		digitalWrite(relayPin,HIGH); // Flick the relay.
@@ -175,10 +177,15 @@ void BrushlessDCMotor::setPulseWidth(int pulseWidth)
  
 BrushlessDCMotor::~BrushlessDCMotor(void){}; // Do nothing special here.
 
-void BrushlessDCMotor::armTheMotor(void)
+int BrushlessDCMotor::arm(void)
 /* Attach the motor to the chosen pins with the specified characteristics, i.e.
- * minimum and maximum pulse widths.
+ * minimum and maximum pulse widths. Also set the arming pulse and request
+ * the necessary delay from the overseer setup() function in main.
  */
 {
 	motor.attach(motorPin,minPulseWidth,maxPulseWidth);
+	setPulseWidth(armPulseWidth);
+	Serial.print("Armed motor: ");
+	Serial.println(identifier);
+	return 25000;
 }

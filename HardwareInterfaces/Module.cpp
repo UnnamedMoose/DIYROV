@@ -47,6 +47,16 @@ int Module::getValue(void)
 	return currentValue;
 }
 
+int Module::arm(void)
+/* Method encompassing setup of the module, i.e. the block of code called
+ * during setup() in the main routine
+ * 
+ * @return - the delay required for the module to finish preparing
+ */
+{
+// Do nothing by default.
+}
+
 const char* Module::getIdentifier(void)
 /* Get the identifer of this Module. */
 {
