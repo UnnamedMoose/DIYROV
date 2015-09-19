@@ -8,12 +8,14 @@
  * @author: Aleksander Lidtke
  * @email: aleksadner.lidtke@gmail.com
  * @url: www.aleksanderlidtke.com
- * @since:  6 Sep 2015
- * @version: 2.0.0
+ * @since: 19 Sep 2015
+ * @version: 2.1.0
  * 
  * CHANGELOG
  *  5 Sep 2015 - 1.0.0 - Alek Lidtke - released the first version.
  * 	6 Sep 2015 - 2.0.0 - Alek & Artur Lidtke - derived this from the Module class.
+ * 19 Sep 2015 - 2.1.0 - Alek & Artur Lidtke - created a decicated method to arm
+ * 	the motors, attaching servos in the constructor doesn't work.
  */
 #ifndef BRUSHLESSDCMOTOR_H
 #define BRUSHLESSDCMOTOR_H
@@ -27,15 +29,16 @@ class BrushlessDCMotor : public Module
 	private:
 		int currentPulseWidth, maxThrustValue;
 		int maxPulseWidth, minPulseWidth;
-		int motorPin, relayPin;
-		Servo motor;
 		bool reversedThrust;
+		int motorPin, relayPin;
 	public:
+		Servo motor;
 		BrushlessDCMotor(const char* motorID, int maximumThrustValue, int maximumEnginePulseWidth, int minimumEnginePulseWidth, int motorPinInput, int relayPinInput);
 		BrushlessDCMotor(const char* motorID, int motorPinInput, int relayPinInput);
 		BrushlessDCMotor(void);
 		~BrushlessDCMotor(void);
 		
+		void armTheMotor(void);
 		void setThrustValueRange(int maximumThrustValue);
 		void setPulseWidthRange(int maximumEnginePulseWidth, int minimumEnginePulseWidth);
 		void setMotorPin(int motorPinInput);

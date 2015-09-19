@@ -32,7 +32,6 @@ relayPin(relayPinInput)
  * 	is used to reverse the thrust of the engine.
  */
 {
-	motor.attach(motorPin,minPulseWidth,maxPulseWidth); // Create a Servo to control the PWM output of the pin, i.e. the RPM of the engine.
 	pinMode(relayPin,OUTPUT); // We will only flick the relay, so it's a simple output pin.
 }	
 
@@ -66,7 +65,7 @@ relayPin(relayPinInput)
  * 	is used to reverse the thrust of the engine.
  */
 {
-	// Can't attach to a servo yet because we don't know the range of pulse widths; this will be done in setPulseWidthRange.
+	// Can't attach to a servo yet because we don't know the range of pulse widths; this will be done when arming the motor anyway.
 	pinMode(relayPin,OUTPUT); // We will only flick the relay, so it's a simple output pin.
 }
 
@@ -105,17 +104,12 @@ void BrushlessDCMotor::setPulseWidthRange(int maximumEnginePulseWidth, int minim
  * fields are specific to the electronic speed controller (ESC) used to drive
  * the motor.
  *
- * Also create the motor Servo instance used to control the PWM, used
- * tor egulate engine's RPM, using the chosen values of the minPulseWidth and
- * maxPulseWidth values.
- *
  * @param maximumEnginePulseWidth,minimumEnginePulseWidth - range of the pulse
  * 	widths that correspond to maximum and minimum RPMs of this motor. In microseconds.
  */
 {
 	minPulseWidth=minimumEnginePulseWidth;
 	maxPulseWidth=maximumEnginePulseWidth;
-	motor.attach(motorPin,minPulseWidth,maxPulseWidth); // This instance of Servo class is used to control the PWM of the motorPin.
 }
 
 void BrushlessDCMotor::setMotorPin(int motorPinInput)
@@ -175,8 +169,16 @@ void BrushlessDCMotor::setPulseWidth(int pulseWidth)
  * 
  * @param pulseWidth - desired pulse width in microseconds.
  */
- {
+{
  	motor.writeMicroseconds(pulseWidth);
- }
+}
  
 BrushlessDCMotor::~BrushlessDCMotor(void){}; // Do nothing special here.
+
+void BrushlessDCMotor::armTheMotor(void)
+/* Attach the motor to the chosen pins with the specified characteristics, i.e.
+ * minimum and maximum pulse widths.
+ */
+{
+	motor.attach(motorPin,minPulseWidth,maxPulseWidth);
+}
