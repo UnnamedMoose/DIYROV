@@ -8,12 +8,14 @@
  * @author: Aleksander Lidtke
  * @email: aleksadner.lidtke@gmail.com
  * @url: www.aleksanderlidtke.com
- * @since:  6 Sep 2015
- * @version: 2.0.0
+ * @since: 19 Sep 2015
+ * @version: 2.1.0
  * 
  * CHANGELOG
  *  5 Sep 2015 - 1.0.0 - Alek Lidtke - released the first version.
  * 	6 Sep 2015 - 2.0.0 - Alek & Artur Lidtke - derived this from the Module class.
+ * 19 Sep 2015 - 2.1.0 - Alek & Artur Lidtke - created a decicated method to arm
+ * 	the motors, attaching servos in the constructor doesn't work.
  */
 #ifndef BRUSHLESSDCMOTOR_H
 #define BRUSHLESSDCMOTOR_H
@@ -26,12 +28,12 @@ class BrushlessDCMotor : public Module
 {
 	private:
 		int currentPulseWidth, maxThrustValue;
-		int maxPulseWidth, minPulseWidth;
-		int motorPin, relayPin;
-		Servo motor;
+		int maxPulseWidth, minPulseWidth, armPulseWidth;
 		bool reversedThrust;
+		int motorPin, relayPin;
 	public:
-		BrushlessDCMotor(const char* motorID, int maximumThrustValue, int maximumEnginePulseWidth, int minimumEnginePulseWidth, int motorPinInput, int relayPinInput);
+		Servo motor;
+		BrushlessDCMotor(const char* motorID, int maximumThrustValue, int maximumEnginePulseWidth, int minimumEnginePulseWidth, int armEnginePulseWidth, int motorPinInput, int relayPinInput);
 		BrushlessDCMotor(const char* motorID, int motorPinInput, int relayPinInput);
 		BrushlessDCMotor(void);
 		~BrushlessDCMotor(void);
@@ -42,6 +44,7 @@ class BrushlessDCMotor : public Module
 		void setRelayPin(int relayPinInput);
 		void setValue(int newThrust); // Override parent method.
 		void setPulseWidth(int pulseWidth);
+		int arm(); // Override the parent method.
 };
 
 #endif

@@ -65,12 +65,12 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
             'motorPortHor':0,
             'motorStbdVer':0,
             'motorStbdHor':0,
-            'forwardLED':False, # forward illumination LED on/off [True,False]
+            'ledOn':False, # forward illumination LED on/off [True,False]
             }
         
         # names and values of sensor readings
         self.sensorParameters = {
-            'depthReading':0, # depth reading [m]
+            'depth':0, # depth reading [m]
             }
     
     def onChoseSerialPort( self, event ):
@@ -83,12 +83,14 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
                     # close any open ports if present
                     if self.portOpen:
                         self.arduinoSerialConnection.close()
-    
+                    
                     self.arduinoSerialConnection = serial.Serial(self.portChoice.GetStringSelection(),
                                                                  19200, timeout = 2)
+                    
                     if self.checkConnection():
                         self.portOpen = True
                         self.currentPort = self.portChoice.GetStringSelection()
+                        
                         # set the initial state
                         self.updateState()
                           
@@ -116,11 +118,9 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         if self.cameraIndex != int(self.cameraChoice.GetStringSelection()):
             # otherwise close the current camera feed and update the internal field
             self.cameraIndex = int(self.cameraChoice.GetStringSelection())
-            # do nothing if the camera is off
-            if self.feedOn:
-                self.feedOn = False
-                self.cameraCapture.release()
-                self.cameraCapture = 0
+            self.feedOn = False
+            self.cameraCapture.release()
+            self.cameraCapture = 0
         
     def onReconnectVideoFeed( self, event ):
         self.setupCapture()
@@ -135,26 +135,21 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         self.Destroy()
 
     def onUpdateState ( self, event ):
-        """ Calls the main function, only used to handle events """
-        self.updateState()
-        
-    def updateState(self):
         """ Main function responsible for sending the desired system state
         to the Arduino and updating the display """
+        
+        # read the sensor values
+        self.updateSensorReadings()
+        
+        # update the video feed
+        self.getNewFrame()
         
         # attempt to communicate with the Arduino
         if self.portOpen:
             # make sure the connection has not been broken
             if self.checkConnection():
-                # read the sensor values
-                self.updateSensorReadings()
-        
                 # send the message
-                communicationProtocol.sendMessage(self.arduinoSerialConnection,
-                                                  self.controlParameters)
-        
-        # update the video feed
-        self.getNewFrame()
+                communicationProtocol.sendMessage(self.arduinoSerialConnection, self.controlParameters)
     
     #=================================
     # non-event funtion declarations
@@ -213,7 +208,7 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         except AttributeError:
             self.feedOn = False
             
-            wx.MessageBox('Could not start video feed!', 'Error', 
+            wx.MessageBox('Could not start video feed', 'Error', 
                     wx.OK | wx.ICON_ERROR)
     
     def getNewFrame(self):
@@ -231,7 +226,7 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
                 height, width = frame.shape[:2]
                 
                 # put on overlay of telemetry
-                cv2.putText(frame,'DEPTH: {:6.2f} m'.format(self.sensorParameters['depthReading']),
+                cv2.putText(frame,'DEPTH: {:6.2f} m'.format(self.sensorParameters['depth']),
                             (int(0.05*width),int(0.05*height)),
                             cv2.FONT_HERSHEY_PLAIN, 1, self.HUDcolour, 2) # size, colour, thickness modifier
                 
@@ -259,7 +254,7 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
             self.arduinoSerialConnection.inWaiting()
         except:
             testMsgGood = False
-
+        
         if not self.arduinoSerialConnection or not self.arduinoSerialConnection.readable() or not testMsgGood:
             wx.MessageBox('Arduino isn\'t readable! Check the connection...', 'Error', 
                   wx.OK | wx.ICON_ERROR)
@@ -279,15 +274,8 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
     
     def updateSensorReadings(self):
         """ Go over each sensor and get its reading, updating the internally stored values """
-        # get the most recent line from the serial port
-        line = self.arduinoSerialConnection.readline()
-        
-        # pass on to the parser
-        readings = communicationProtocol.readMessage(line)
-        
-        # update sensor and other readings
-        for readingKey in readings:
-            self.sensorParameters[readingKey] = readings[readingKey]
+        # TODO this is just a dummy
+        self.sensorParameters['depth'] = 0
     
 # implements the GUI class to run a wxApp
 class rovGuiApp(wx.App):
