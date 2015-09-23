@@ -1,23 +1,3 @@
-/* A class that serves as an interface between an Arduino and a brushless DC
- * motor and a relay used to reverse the thrust of the engine by reversing the
- * direction of the current flow through it.
- *
- * This source and the header have to be placed in the Arduino libraries' directory,
- * e.g. /usr/share/arduino/libraries/ in BrushlessDCMotor folder.
- *
- * @author: Aleksander Lidtke
- * @email: aleksadner.lidtke@gmail.com
- * @url: www.aleksanderlidtke.com
- * @since:  6 Sep 2015
- * @version: 2.0.0
- * 
- * CHANGELOG
- *  5 Sep 2015 - 1.0.0 - Alek Lidtke - released the first version.
- *  6 Sep 2015 - 1.1.0 - Alek Lidtke - changed motor identifers to char* to make
- * 	the class compatible with the agreed telecommunications protocol.
- * 	6 Sep 2015 - 2.0.0 - Alek & Artur Lidtke - derived this from the Module class.
- */
-
 #include "BrushlessDCMotor.h"
 
 // Method definitions.
@@ -27,6 +7,7 @@ BrushlessDCMotor::BrushlessDCMotor
 	int maximumThrustValue,
 	int maximumEnginePulseWidth,
 	int minimumEnginePulseWidth,
+	int armEnginePulseWidth,
 	int motorPinInput,
 	int relayPinInput
 )
@@ -36,6 +17,7 @@ currentPulseWidth(0), // Ditto - zero thrust.
 maxThrustValue(maximumThrustValue),
 maxPulseWidth(maximumEnginePulseWidth),
 minPulseWidth(minimumEnginePulseWidth),
+armPulseWidth(armEnginePulseWidth),
 reversedThrust(false), // By default the thrust isn't reversed.
 motorPin(motorPinInput),
 relayPin(relayPinInput)
@@ -52,9 +34,7 @@ relayPin(relayPinInput)
  * 	is used to reverse the thrust of the engine.
  */
 {
-	motor.attach(motorPin,minPulseWidth,maxPulseWidth); // Create a Servo to control the PWM output of the pin, i.e. the RPM of the engine.
 	pinMode(relayPin,OUTPUT); // We will only flick the relay, so it's a simple output pin.
-	Serial.begin(serialBaudRate); // Start serial comms.
 }	
 
 BrushlessDCMotor::BrushlessDCMotor
@@ -87,9 +67,8 @@ relayPin(relayPinInput)
  * 	is used to reverse the thrust of the engine.
  */
 {
-	// Can't attach to a servo yet because we don't know the range of pulse widths; this will be done in setPulseWidthRange.
+	// Can't attach to a servo yet because we don't know the range of pulse widths; this will be done when arming the motor anyway.
 	pinMode(relayPin,OUTPUT); // We will only flick the relay, so it's a simple output pin.
-	Serial.begin(serialBaudRate); // Start serial comms.
 }
 
 BrushlessDCMotor::BrushlessDCMotor()
@@ -107,7 +86,6 @@ relayPin(-1)
  * setPulseWidthRnage methods (pins should be set before the ranges).
  */
 {
-	Serial.begin(serialBaudRate); // Start serial comms.
 }
 
 void BrushlessDCMotor::setThrustValueRange(int maximumThrustValue)
@@ -128,17 +106,12 @@ void BrushlessDCMotor::setPulseWidthRange(int maximumEnginePulseWidth, int minim
  * fields are specific to the electronic speed controller (ESC) used to drive
  * the motor.
  *
- * Also create the motor Servo instance used to control the PWM, used
- * tor egulate engine's RPM, using the chosen values of the minPulseWidth and
- * maxPulseWidth values.
- *
  * @param maximumEnginePulseWidth,minimumEnginePulseWidth - range of the pulse
  * 	widths that correspond to maximum and minimum RPMs of this motor. In microseconds.
  */
 {
 	minPulseWidth=minimumEnginePulseWidth;
 	maxPulseWidth=maximumEnginePulseWidth;
-	motor.attach(motorPin,minPulseWidth,maxPulseWidth); // This instance of Servo class is used to control the PWM of the motorPin.
 }
 
 void BrushlessDCMotor::setMotorPin(int motorPinInput)
@@ -175,7 +148,7 @@ void BrushlessDCMotor::setValue(int newThrust)
  * 	scaled to the pusle width between minPulseWidth and	maxPulseWidth class
  * 	attributes. newThrust can be negative to indicate reverse thrust direction.
  */
-{
+{//TODO: when reversing thrust go through the zero throttle position to avoid burning shit.
 	if(newThrust<0){ // < 0, if we set thrust to 0 make sure we're working forward again, it is likely we will go reverse->0->forward.
 		reversedThrust=true; // Keep track of the fact we're working backwards.
 		digitalWrite(relayPin,HIGH); // Flick the relay.
@@ -198,8 +171,21 @@ void BrushlessDCMotor::setPulseWidth(int pulseWidth)
  * 
  * @param pulseWidth - desired pulse width in microseconds.
  */
- {
+{
  	motor.writeMicroseconds(pulseWidth);
- }
+}
  
 BrushlessDCMotor::~BrushlessDCMotor(void){}; // Do nothing special here.
+
+int BrushlessDCMotor::arm(void)
+/* Attach the motor to the chosen pins with the specified characteristics, i.e.
+ * minimum and maximum pulse widths. Also set the arming pulse and request
+ * the necessary delay from the overseer setup() function in main.
+ */
+{
+	motor.attach(motorPin,minPulseWidth,maxPulseWidth);
+	setPulseWidth(armPulseWidth);
+	Serial.print("Armed motor: ");
+	Serial.println(identifier);
+	return 25000;
+}

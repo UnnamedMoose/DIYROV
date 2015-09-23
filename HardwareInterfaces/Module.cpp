@@ -1,19 +1,3 @@
-/* A class that serves as an interface between an Arduino and a generic piece of 
- * equipment, e.g. a sensor or an actuator. Other specific classes used to control
- * e.g brushless DC motors, LEDs or depth sensors are derived from this class.
- *
- * This header and the source have to be placed in the Arduino libraries' directory,
- * e.g. /usr/share/arduino/libraries/ in Module folder.
- *
- * @author: Aleksander & Artur Lidtke
- * @email: aleksadner.lidtke@gmail.com
- * @url: www.aleksanderlidtke.com
- * @since:  6 Sep 2015
- * @version: 1.0.0
- * 
- * CHANGELOG
- *  6 Sep 2015 - 1.0.0 - Alek Lidtke - released the first version.
- */
 #include "Module.h"
 
 // Initialise the static members.
@@ -26,6 +10,7 @@ Module::Module(void)
 {
 	identifier = "UNKNOWN_MODULE";
 	currentValue = 0;
+	Serial.begin(serialBaudRate); // Start serial comms.
 }
  
 Module::Module(const char* newIdentifier)
@@ -34,6 +19,7 @@ Module::Module(const char* newIdentifier)
 {
 	identifier = newIdentifier;
 	currentValue = 0;
+	Serial.begin(serialBaudRate); // Start serial comms.
 }
 
 Module::~Module(void){};/* Do nothing special here.*/
@@ -59,6 +45,16 @@ int Module::getValue(void)
  */
 {
 	return currentValue;
+}
+
+int Module::arm(void)
+/* Method encompassing setup of the module, i.e. the block of code called
+ * during setup() in the main routine
+ * 
+ * @return - the delay required for the module to finish preparing
+ */
+{
+// Do nothing by default.
 }
 
 const char* Module::getIdentifier(void)

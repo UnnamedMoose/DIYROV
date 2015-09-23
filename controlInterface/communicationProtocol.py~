@@ -7,14 +7,13 @@ Created on Sun May 24 16:34:31 2015
 
 # TODO wrap-up sending and receiving data protocols from Arduino here
 
-#TODO hold serial connection to the Arduino here
+#TODO hold serial connection here
 
 import sys, serial, glob
 
 # constants for dfinig the format of a data packet
 OUTPUT_START_CHAR = '>'
-INPUT_START_CHAR = '<'
-MESSAGE_END_CHAR = ';'
+OUTPUT_END_CHAR = ';'
 DATA_DELIMITER = ','
 
 def getActivePorts():
@@ -53,29 +52,6 @@ def sendMessage(serialConnection,keywords):
     """
     msg = OUTPUT_START_CHAR
     for key in keywords:
-        msg += '{}{}{}'.format(key, DATA_DELIMITER, keywords[key])
-    msg += MESSAGE_END_CHAR
+        msg += key + DATA_DELIMITER + keywords[key]
+    msg += OUTPUT_END_CHAR
     serialConnection.write(msg)
-
-def readMessage(s):
-    """ Decode an input string into a set of keywords and values
-    Arguments
-    ---------
-        @param s - string representation of an input message
-    """
-    if s:
-        s = s.strip()
-        if s[0] == INPUT_START_CHAR and s[-1] == MESSAGE_END_CHAR:
-            # split into values and keys
-            s = s.lstrip(INPUT_START_CHAR).rstrip(MESSAGE_END_CHAR).split(DATA_DELIMITER)
-
-            readings = {}
-            try:
-                # concentrate into a dictionary
-                for iKey in range(0,len(s),2):
-                    readings[s[iKey]] = s[iKey+1]
-            except IndexError:
-                pass
-            return readings
-
-    return {}

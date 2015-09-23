@@ -28,10 +28,18 @@ class Module
 		Module(void);
 		Module(const char* newIdentifier);
 		~Module(void);
+		// Sets control value of the module, e.g. thrust.
 		virtual void setValue(int newValue);
-		int getValue(void);
+		// Returns the current control value, e.g. sensor reading.
+		virtual int getValue(void);
+		// Method encompassing setup of the module, i.e. the block of code called
+		// during setup() in the main routine; returns the delay required for the
+		// module to finish preparing
+		virtual int arm(void);
+		// Returns the name of the module.
 		const char* getIdentifier(void);
 		
+		// Serial frequency common for all modules.
 		static const int serialBaudRate;
 };
 
