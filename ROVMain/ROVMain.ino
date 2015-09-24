@@ -10,12 +10,13 @@
  * @email: alekasdner.lidtke@gmail.com
  * @url: www.aleksanderlidtke.com
  * @since: 24 Sep 2015
- * @version: 2.1.0
+ * @version: 2.1.1
  * 
  * CHANGELOG
  *  5 Sep 2015 - 1.0.0 - Alek Lidtke - released the first version.
  *  6 Sep 2015 - 2.0.0 - Alek & Artur Lidtke - derived motor class from the Module class.
  * 24 Sep 2015 - 2.1.0 - Alek Lidtke - added command handling via dummy Modules.
+ * 				 2.1.1 - Alek Lidtke - added ROV identifying strings.
  */
 
 // Custom includes.
@@ -26,6 +27,10 @@
 
 // Standard c/C++ includes
 #include <stdio.h>
+
+// ROV identifiers.
+const String ROV_MODEL = "zy3b";
+const String ROV_SW_VERSION = "2.1.1";
 
 /* =============================================================================
  * FUNCTION DECLARATIONS.
@@ -56,7 +61,7 @@ BrushlessDCMotor engine4 = BrushlessDCMotor("motorStbdVer", THROTTLE_STEPS, MOTO
 	MOTOR_MIN_PULSE_WIDTH, MOTOR_ARM_PULSE_WIDTH, 3, 2);
 
 /* =============================================================================
- * MISC ACTUATOR DEFINITIONS.
+ * MISC ACTUATOR AND COMMAND DEFINITIONS.
  * =============================================================================
  */
 Module sendSensorReadingsModule = Module("sendSensorReadings"); // Sends sensor readings over serial.
@@ -123,7 +128,7 @@ void setup(void)
 	
 	//TODO: do whatever else operations we want to do at start-up.
 	
-	Serial.println("ROV listening to commands."); //TODO: could add VERSION, ROVMODEL etc. consts somewhere so we know what ROV we're using.
+	Serial.println("ROV "+ROV_MODEL+" v. "+ROV_SW_VERSION+" listening to commands."); //TODO: could add VERSION, ROVMODEL etc. consts somewhere so we know what ROV we're using.
 }
 
 void loop(void)
@@ -218,7 +223,7 @@ void parseInput(void)
   	// If next actuator index < 0 we have no value to read now
   	if (nextActuatorIndex >= 0)
   	{
-  		Serial.print("ROV trying to set value of actuator ");
+  		Serial.print("ROV "+ROV_MODEL+" v. "+ROV_SW_VERSION+" trying to set value of actuator ");
   		Serial.print(actuators[nextActuatorIndex]->getIdentifier());
   		Serial.print(" to ");
   		Serial.println( String(int(atof(token))) );
