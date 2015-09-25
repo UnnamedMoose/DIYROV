@@ -190,6 +190,10 @@ class mainFrame ( wx.Frame ):
 		self.Layout()
 		self.frameTimer = wx.Timer()
 		self.frameTimer.SetOwner( self, wx.ID_ANY )
+		self.controlInputTimer = wx.Timer()
+		self.controlInputTimer.SetOwner( self, wx.ID_ANY )
+		self.sensorReadingsTimer = wx.Timer()
+		self.sensorReadingsTimer.SetOwner( self, wx.ID_ANY )
 		
 		self.Centre( wx.BOTH )
 		
@@ -199,7 +203,9 @@ class mainFrame ( wx.Frame ):
 		self.updatePortsButton.Bind( wx.EVT_BUTTON, self.onUpdatePorts )
 		self.cameraChoice.Bind( wx.EVT_CHOICE, self.onChoseCameraIndex )
 		self.cameraReconnectButton.Bind( wx.EVT_BUTTON, self.onReconnectVideoFeed )
-		self.Bind( wx.EVT_TIMER, self.onUpdateState, id=wx.ID_ANY )
+		self.Bind( wx.EVT_TIMER, self.onUpdateFrame, id=wx.ID_ANY )
+		self.Bind( wx.EVT_TIMER, self.onUpdateControlInputs, id=wx.ID_ANY )
+		self.Bind( wx.EVT_TIMER, self.onUpdateSensorReadings, id=wx.ID_ANY )
 	
 	def __del__( self ):
 		pass
@@ -221,7 +227,13 @@ class mainFrame ( wx.Frame ):
 	def onReconnectVideoFeed( self, event ):
 		event.Skip()
 	
-	def onUpdateState( self, event ):
+	def onUpdateFrame( self, event ):
+		event.Skip()
+	
+	def onUpdateControlInputs( self, event ):
+		event.Skip()
+	
+	def onUpdateSensorReadings( self, event ):
 		event.Skip()
 	
 
