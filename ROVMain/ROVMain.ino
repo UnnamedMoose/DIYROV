@@ -9,12 +9,14 @@
  * @author: Aleksander Lidtke
  * @email: alekasdner.lidtke@gmail.com
  * @url: www.aleksanderlidtke.com
- * @since:  6 Sep 2015
- * @version: 2.0.0
+ * @since: 24 Sep 2015
+ * @version: 2.1.1
  * 
  * CHANGELOG
  *  5 Sep 2015 - 1.0.0 - Alek Lidtke - released the first version.
  *  6 Sep 2015 - 2.0.0 - Alek & Artur Lidtke - derived motor class from the Module class.
+ * 24 Sep 2015 - 2.1.0 - Alek Lidtke - added command handling via dummy Modules.
+ * 				 2.1.1 - Alek Lidtke - added ROV identifying strings.
  */
 
 // Custom includes.
@@ -25,6 +27,10 @@
 
 // Standard c/C++ includes
 #include <stdio.h>
+
+// ROV identifiers.
+const String ROV_MODEL = "zy3b";
+const String ROV_SW_VERSION = "2.1.1";
 
 /* =============================================================================
  * FUNCTION DECLARATIONS.
@@ -47,15 +53,22 @@ void sendSensorReadings(void);
 // Pins are pairs of close-by pins with PWM and digital ones.
 BrushlessDCMotor engine1 = BrushlessDCMotor("motorPortHor", THROTTLE_STEPS, MOTOR_MAX_PULSE_WIDTH,
 	MOTOR_MIN_PULSE_WIDTH, MOTOR_ARM_PULSE_WIDTH, 9, 8);
-/*BrushlessDCMotor engine2 = BrushlessDCMotor("motorStbdHor", THROTTLE_STEPS, MOTOR_MAX_PULSE_WIDTH, MOTOR_MIN_PULSE_WIDTH, 6, 7);
-BrushlessDCMotor engine3 = BrushlessDCMotor("motorPortVer", THROTTLE_STEPS, MOTOR_MAX_PULSE_WIDTH, MOTOR_MIN_PULSE_WIDTH, 5, 4);
-BrushlessDCMotor engine4 = BrushlessDCMotor("motorStbdVer", THROTTLE_STEPS, MOTOR_MAX_PULSE_WIDTH, MOTOR_MIN_PULSE_WIDTH, 3, 2);
-*/
+BrushlessDCMotor engine2 = BrushlessDCMotor("motorStbdHor", THROTTLE_STEPS, MOTOR_MAX_PULSE_WIDTH,
+	MOTOR_MIN_PULSE_WIDTH, MOTOR_ARM_PULSE_WIDTH, 6, 7);
+BrushlessDCMotor engine3 = BrushlessDCMotor("motorPortVer", THROTTLE_STEPS,MOTOR_MAX_PULSE_WIDTH,
+	MOTOR_MIN_PULSE_WIDTH, MOTOR_ARM_PULSE_WIDTH, 5, 4);
+BrushlessDCMotor engine4 = BrushlessDCMotor("motorStbdVer", THROTTLE_STEPS, MOTOR_MAX_PULSE_WIDTH,
+	MOTOR_MIN_PULSE_WIDTH, MOTOR_ARM_PULSE_WIDTH, 3, 2);
+
 /* =============================================================================
- * MISC ACTUATOR DEFINITIONS.
+ * MISC ACTUATOR AND COMMAND DEFINITIONS.
  * =============================================================================
  */
-const char* LED_LABEL = "forwardLED"; // Whether forward illumination LED is on or of.
+Module sendSensorReadingsModule = Module("sendSensorReadings"); // Sends sensor readings over serial.
+
+Module refreshRate = Module("refreshRate"); // Changes the delay in the main loop.
+
+Module forwardLED = Module("forwardLED"); // Switches the forward illumination LED on or of.
 const int FORWARD_LED_PIN = 12; // When this is set HIGH the forward light will switch on.
 
 const int ON_LED_PIN = 13; // LED on the Arduino board that will be lit when the ROV is in the main loop.
@@ -71,8 +84,6 @@ DepthSensor depthSensor2 = DepthSensor("depthReading2",16); // Another mock sens
  * TELECOMMAND PROTOCOL DEFINITION.
  * =============================================================================
  */
-const int REFRESH_RATE = 100; // How many milliseconds to wait before checking for input commands.
-
 // Input and output data buffers.
 #define DATABUFFERSIZE 80
 char inputDataBuffer[DATABUFFERSIZE+1]; // Where the received command will be temporarily held. Add 1 for NULL terminator at the end.
@@ -84,7 +95,7 @@ const char OUTPUT_START_CHAR = '<'; // At the start of every command message sen
 const char END_CHAR = ';'; // End of the command message sent to and from the Arduino.
 const char DATA_DELIMITER[2] = ","; // Splits the command name and value. For some reason has to be size 2.
 
-Module* actuators[] = {&engine1/*, &engine2, &engine3, &engine4*/};
+Module* actuators[] = {&engine1, &engine2, &engine3, &engine4, &sendSensorReadingsModule, &refreshRate, &forwardLED};
 Module* sensors[] = {&depthSensor, &depthSensor2};
 
 /* =============================================================================
@@ -94,6 +105,8 @@ Module* sensors[] = {&depthSensor, &depthSensor2};
 void setup(void)
 /* Prepare to listen to commands over serial and start everything up. */
 {
+	refreshRate.setValue(100); // Set default delay in milliseconds in the main loop/
+
 	//TODO: do some system checks, like battery level, connections etc.
 
 	// Start serial comms at the same baud rate as the engines.
@@ -115,7 +128,7 @@ void setup(void)
 	
 	//TODO: do whatever else operations we want to do at start-up.
 	
-	Serial.println("ROV listening to commands."); //TODO: could add VERSION, ROVMODEL etc. consts somewhere so we know what ROV we're using.
+	Serial.println("ROV "+ROV_MODEL+" v. "+ROV_SW_VERSION+" listening to commands."); //TODO: could add VERSION, ROVMODEL etc. consts somewhere so we know what ROV we're using.
 }
 
 void loop(void)
@@ -132,11 +145,14 @@ void loop(void)
 		}
 	}
 
-	// Periodically send readings from all the sensors over serial.
-	sendSensorReadings();
+	// Send readings from all the sensors over serial after this has been requested by a command.
+	if(sendSensorReadingsModule.getValue()==1)
+	{
+		sendSensorReadings();
+	}
 	
 	// Reduce rate at which stuff happens.
-	delay(REFRESH_RATE);
+	delay(refreshRate.getValue());
 }
 
 boolean getSerial(void)
@@ -207,11 +223,10 @@ void parseInput(void)
   	// If next actuator index < 0 we have no value to read now
   	if (nextActuatorIndex >= 0)
   	{
-  		Serial.print("ROV trying to set value of actuator ");
+  		Serial.print("ROV "+ROV_MODEL+" v. "+ROV_SW_VERSION+" trying to set value of actuator ");
   		Serial.print(actuators[nextActuatorIndex]->getIdentifier());
   		Serial.print(" to ");
   		Serial.println( String(int(atof(token))) );
-  		
   		actuators[nextActuatorIndex] -> setValue( int(atof(token)) );
   		// Indicate that on the next pass there is no value to read.
   		nextActuatorIndex = -1;
