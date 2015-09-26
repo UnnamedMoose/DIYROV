@@ -92,11 +92,6 @@ class mainFrame ( wx.Frame ):
 		self.controls = wx.Panel( self.cotrolPanel, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		controlsSizerVert = wx.BoxSizer( wx.VERTICAL )
 		
-		portChoiceVertSizer = wx.BoxSizer( wx.VERTICAL )
-		
-		
-		portChoiceVertSizer.AddSpacer( ( 0, 0), 1, wx.EXPAND, 5 )
-		
 		portChoiceDropdownHorSizer = wx.BoxSizer( wx.HORIZONTAL )
 		
 		self.portChoiceLabel = wx.StaticText( self.controls, wx.ID_ANY, u"Serial port:", wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -109,10 +104,10 @@ class mainFrame ( wx.Frame ):
 		portChoiceChoices = []
 		self.portChoice = wx.Choice( self.controls, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, portChoiceChoices, 0 )
 		self.portChoice.SetSelection( 0 )
-		portChoiceDropdownHorSizer.Add( self.portChoice, 0, wx.ALIGN_BOTTOM|wx.ALIGN_RIGHT|wx.ALL|wx.EXPAND, 5 )
+		portChoiceDropdownHorSizer.Add( self.portChoice, 1, wx.ALIGN_BOTTOM|wx.ALIGN_RIGHT|wx.ALL|wx.EXPAND, 5 )
 		
 		
-		portChoiceVertSizer.Add( portChoiceDropdownHorSizer, 1, wx.EXPAND, 5 )
+		controlsSizerVert.Add( portChoiceDropdownHorSizer, 1, wx.EXPAND, 5 )
 		
 		portChoiceButtonHorSizer = wx.BoxSizer( wx.HORIZONTAL )
 		
@@ -123,15 +118,7 @@ class mainFrame ( wx.Frame ):
 		portChoiceButtonHorSizer.Add( self.updatePortsButton, 0, wx.ALL|wx.EXPAND, 5 )
 		
 		
-		portChoiceVertSizer.Add( portChoiceButtonHorSizer, 1, wx.EXPAND, 5 )
-		
-		
-		controlsSizerVert.Add( portChoiceVertSizer, 1, wx.EXPAND, 5 )
-		
-		cameraChoiceVertSizer = wx.BoxSizer( wx.VERTICAL )
-		
-		
-		cameraChoiceVertSizer.AddSpacer( ( 0, 0), 1, wx.EXPAND, 5 )
+		controlsSizerVert.Add( portChoiceButtonHorSizer, 1, wx.EXPAND, 5 )
 		
 		cameraChoiceDropdownHorSizer = wx.BoxSizer( wx.HORIZONTAL )
 		
@@ -148,7 +135,7 @@ class mainFrame ( wx.Frame ):
 		cameraChoiceDropdownHorSizer.Add( self.cameraChoice, 0, wx.ALIGN_BOTTOM|wx.ALIGN_RIGHT|wx.ALL|wx.EXPAND, 5 )
 		
 		
-		cameraChoiceVertSizer.Add( cameraChoiceDropdownHorSizer, 1, wx.EXPAND, 5 )
+		controlsSizerVert.Add( cameraChoiceDropdownHorSizer, 1, wx.EXPAND, 5 )
 		
 		cameraChoiceButtonHorSizer = wx.BoxSizer( wx.HORIZONTAL )
 		
@@ -159,10 +146,7 @@ class mainFrame ( wx.Frame ):
 		cameraChoiceButtonHorSizer.Add( self.cameraReconnectButton, 0, wx.ALL|wx.EXPAND, 5 )
 		
 		
-		cameraChoiceVertSizer.Add( cameraChoiceButtonHorSizer, 1, wx.EXPAND, 5 )
-		
-		
-		controlsSizerVert.Add( cameraChoiceVertSizer, 1, wx.EXPAND, 5 )
+		controlsSizerVert.Add( cameraChoiceButtonHorSizer, 1, wx.EXPAND, 5 )
 		
 		self.armModules = wx.Button( self.controls, wx.ID_ANY, u"Arm modules", wx.DefaultPosition, wx.DefaultSize, 0 )
 		controlsSizerVert.Add( self.armModules, 0, wx.ALL|wx.EXPAND, 5 )

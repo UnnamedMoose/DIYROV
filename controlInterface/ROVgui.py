@@ -74,6 +74,7 @@ class rovGuiCommunicationsSettingsDialog( ROVguiBaseClasses.communicationsSettin
     def setArduinoFreq(self,event):
         if self.arduinoLoopFreqTextControl.GetValue():
             self.GetParent().freqArduino = int(self.arduinoLoopFreqTextControl.GetValue())
+            self.GetParent().controlParameters['refreshRate'] = int(1000./self.GetParent().freqArduino)
     
     def setVideoFreq(self,event):
         # TODO there should be a built-in way to transfer data, can't find it right now
@@ -97,7 +98,7 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         ROVguiBaseClasses.mainFrame.__init__( self, None )
         
         # set-up own fields
-        self.freqArduino = 100 # default refresh rate for the Arduino
+        self.freqArduino = 100 # default refresh rate for the Arduino in Hz
         
         # video feed
         self.freqVideo = 15 # frame rate update frquency
@@ -112,7 +113,6 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         self.arduinoSerialConnection = 0 # holds the serial connecion object once it has been initialised
         self.freqSensorReadings = 5
         self.freqControlInputs = 5
-        self.arduinoRefreshRate = {'refreshRate':10} # How many milliseconds Arduino sleeps after each main loop.
         
         # create the internal bitmap object by using an empty bitmap, this will be projected onto the panel
         self.bmp = wx.EmptyBitmap(400,300)
@@ -141,6 +141,7 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         
         # keeps the names and values of all control parameters
         self.controlParameters = {
+            'refreshRate':int(1000./self.freqArduino), # delay needed after each loop() pass in ROVmain.ino
             'motorPortVer':0, # throttle of the port vert motor <-100,100>
             'motorPortHor':0,
             'motorStbdVer':0,
@@ -155,8 +156,18 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
             'depthReading':0, # depth reading [m]
             }
         
+        # this needs to be called for the modules to be armed
         self.armModulesCommand = {'armModules':1}
     
+    def onClose( self, event ):
+        # close the serial port before terminating, need to make sure it isn't left hanging
+        if self.portOpen:
+            self.arduinoSerialConnection.close()
+        # release the video capture object
+        if self.feedOn:
+            self.cameraCapture.release()
+        self.Destroy()
+
     def onChoseSerialPort( self, event ):
         """ picks up the newly selected port and attempts to connect to Arduino via it """
         # ignore the None option
@@ -206,20 +217,15 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
                 self.cameraCapture = 0
         
     def onReconnectVideoFeed( self, event ):
+        """ Setup a new capture """
         self.setupCapture()
     
-    def onClose( self, event ):
-        # close the serial port before terminating, need to make sure it isn't left hanging
-        if self.portOpen:
-            self.arduinoSerialConnection.close()
-        # release the video capture object
-        if self.feedOn:
-            self.cameraCapture.release()
-        self.Destroy()
-
     def onUpdateFrame(self,event):
         """ call the frame update when timer is activated """
         self.getNewFrame()
+    
+    
+    
     
     def onUpdateControlInputs(self,event):
         """ Send the control data to Arduino to set rps etc. """
@@ -261,44 +267,6 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
     #=================================
     # non-event funtion declarations
     
-    def updateControlInputs(self):
-        """ sends the control inputs to Arduino """
-        if self.portOpen:
-            # make sure the connection has not been broken
-            if self.checkConnection():
-                # send the message
-                communicationProtocol.sendMessage(self.arduinoSerialConnection,self.controlParameters)
-                
-        # update the display of engine throttles
-        self.throttleDial_portVer.currentThrottle = self.controlParameters['motorPortVer']
-        self.throttleDial_portVer.Refresh()
-        self.throttleDial_portHor.currentThrottle = self.controlParameters['motorPortHor']
-        self.throttleDial_portHor.Refresh()
-        self.throttleDial_stbdVer.currentThrottle = self.controlParameters['motorStbdVer']
-        self.throttleDial_stbdVer.Refresh()
-        self.throttleDial_stbdHor.currentThrottle = self.controlParameters['motorStbdHor']
-        self.throttleDial_stbdHor.Refresh()
-    
-    def updateSensorReadings(self):
-        """ Go over each sensor and get its reading, updating the internally stored values """
-        if self.portOpen:
-            # make sure the connection has not been broken
-            if self.checkConnection():
-                pass
-                # ask the Arduino nicely to return the current readings
-                communicationProtocol.sendMessage(self.arduinoSerialConnection,
-                                                  self.sensorReadingsRequestObject)
-                
-                # get the most recent line from the serial port
-                line = self.arduinoSerialConnection.readline()
-                
-                # pass on to the parser
-                readings = communicationProtocol.readMessage(line)
-                
-                # update sensor and other readings
-                for readingKey in readings:
-                    self.sensorParameters[readingKey] = float(readings[readingKey])
-                    
     def updatePorts(self):
         """ Checks the list of open serial ports and updates the internal list
         and the options shown in the dropdown selection menu. """
@@ -326,6 +294,32 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         else:
             self.portChoice.SetSelection(0)
             self.currentSelection = 'None'
+        
+    def checkConnection( self ):
+        """ Checks if the Arduino is still connected. """
+        
+        testMsgGood = True
+        try:
+            self.arduinoSerialConnection.inWaiting()
+        except:
+            testMsgGood = False
+
+        if not self.arduinoSerialConnection or not self.arduinoSerialConnection.readable() or not testMsgGood:
+            wx.MessageBox('Arduino isn\'t readable! Check the connection...', 'Error', 
+                  wx.OK | wx.ICON_ERROR)
+            
+            # close the connection
+            self.arduinoSerialConnection.close()
+            self.arduinoSerialConnection = 0
+            self.portOpen = False
+            self.currentPort = 'None'
+            
+            # check what ports are open - will set choice as None if current port has been lost
+            self.updateActivePorts()
+            
+            return False
+        else:
+            return True
     
     def setupCapture(self):
         """ Creates the camera capture object used to retrieve new frames """
@@ -390,41 +384,44 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
                 
                 wx.MessageBox('Video feed interrupted', 'Error', wx.OK | wx.ICON_ERROR)
                     
-    def checkConnection( self ):
-        """ Checks if the Arduino is still connected. """
-        
-        testMsgGood = True
-        try:
-            self.arduinoSerialConnection.inWaiting()
-        except:
-            testMsgGood = False
-
-        if not self.arduinoSerialConnection or not self.arduinoSerialConnection.readable() or not testMsgGood:
-            wx.MessageBox('Arduino isn\'t readable! Check the connection...', 'Error', 
-                  wx.OK | wx.ICON_ERROR)
-            
-            # close the connection
-            self.arduinoSerialConnection.close()
-            self.arduinoSerialConnection = 0
-            self.portOpen = False
-            self.currentPort = 'None'
-            
-            # check what ports are open - will set choice as None if current port has been lost
-            self.updateActivePorts()
-            
-            return False
-        else:
-            return True
-            
-    def updateArduinoRefreshRate(self, newRefreshRate):
-        """ Set a new refresh rate in milliseconds on the Arduino. """
-        self.arduinoRefreshRate["refreshRate"] = newRefreshRate # Use a dict to hold this value to be consistent with all other commands.
+    def updateControlInputs(self):
+        """ sends the control inputs to Arduino """
         if self.portOpen:
             # make sure the connection has not been broken
             if self.checkConnection():
-                communicationProtocol.sendMessage(self.arduinoSerialConnection,self.arduinoRefreshRate)
-        
+                # send the control variables
+                communicationProtocol.sendMessage(self.arduinoSerialConnection,self.controlParameters)
+                
+        # update the display of engine throttles
+        self.throttleDial_portVer.currentThrottle = self.controlParameters['motorPortVer']
+        self.throttleDial_portVer.Refresh()
+        self.throttleDial_portHor.currentThrottle = self.controlParameters['motorPortHor']
+        self.throttleDial_portHor.Refresh()
+        self.throttleDial_stbdVer.currentThrottle = self.controlParameters['motorStbdVer']
+        self.throttleDial_stbdVer.Refresh()
+        self.throttleDial_stbdHor.currentThrottle = self.controlParameters['motorStbdHor']
+        self.throttleDial_stbdHor.Refresh()
     
+    def updateSensorReadings(self):
+        """ Go over each sensor and get its reading, updating the internally stored values """
+        if self.portOpen:
+            # make sure the connection has not been broken
+            if self.checkConnection():
+                pass
+                # ask the Arduino nicely to return the current readings
+                communicationProtocol.sendMessage(self.arduinoSerialConnection,
+                                                  self.sensorReadingsRequestObject)
+                
+                # get the most recent line from the serial port
+                line = self.arduinoSerialConnection.readline()
+                
+                # pass on to the parser
+                readings = communicationProtocol.readMessage(line)
+                
+                # update sensor and other readings
+                for readingKey in readings:
+                    self.sensorParameters[readingKey] = float(readings[readingKey])
+                    
 # implements the GUI class to run a wxApp
 class rovGuiApp(wx.App):
     def OnInit(self):
