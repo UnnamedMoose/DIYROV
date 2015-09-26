@@ -20,7 +20,7 @@
  * 26 Sep 2015 - 2.1.2 - Alek Lidtke - put arming modules into a dedicated function to not freeze the GUI when doing so.
  */
 
-#define DEBUG_PRINTOUT
+//#define DEBUG_PRINTOUT
 
 // Custom includes.
 #include "Module.h"
@@ -112,7 +112,7 @@ void setup(void)
 /* Prepare to listen to commands over serial and start everything up. */
 {
 	armModulesModule.setValue(0); // Don't arm the modules by default, wait for a command.
-	refreshRate.setValue(100); // Set default delay in milliseconds in the main loop/
+	refreshRate.setValue(10); // Set default delay in milliseconds in the main loop/
 
 	//TODO: do some system checks, like battery level, connections etc.
 
