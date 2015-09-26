@@ -205,6 +205,15 @@ class mainFrame ( wx.Frame ):
 		self.controlInputTimer.SetOwner( self, controlInputTimerID )
 		self.sensorReadingsTimer = wx.Timer()
 		self.sensorReadingsTimer.SetOwner( self, sensorReadingsTimerID )
+		self.mainMenuBar = wx.MenuBar( 0 )
+		self.settingsMenu = wx.Menu()
+		self.communicationsSettings  = wx.MenuItem( self.settingsMenu, wx.ID_ANY, u"Communications settings", wx.EmptyString, wx.ITEM_NORMAL )
+		self.settingsMenu.AppendItem( self.communicationsSettings  )
+		
+		self.mainMenuBar.Append( self.settingsMenu, u"Settings" ) 
+		
+		self.SetMenuBar( self.mainMenuBar )
+		
 		
 		self.Centre( wx.BOTH )
 		
@@ -219,6 +228,7 @@ class mainFrame ( wx.Frame ):
 		self.Bind( wx.EVT_TIMER, self.onUpdateFrame, id=frameTimerID )
 		self.Bind( wx.EVT_TIMER, self.onUpdateControlInputs, id=controlInputTimerID )
 		self.Bind( wx.EVT_TIMER, self.onUpdateSensorReadings, id=sensorReadingsTimerID )
+		self.Bind( wx.EVT_MENU, self.onCommunicationsSettings, id = self.communicationsSettings .GetId() )
 	
 	def __del__( self ):
 		pass
@@ -253,6 +263,9 @@ class mainFrame ( wx.Frame ):
 		event.Skip()
 	
 	def onUpdateSensorReadings( self, event ):
+		event.Skip()
+	
+	def onCommunicationsSettings( self, event ):
 		event.Skip()
 	
 
@@ -290,6 +303,98 @@ class armDialog ( wx.Dialog ):
 	
 	# Virtual event handlers, overide them in your derived class
 	def onClose( self, event ):
+		event.Skip()
+	
+
+###########################################################################
+## Class communicationsSettingsDialog
+###########################################################################
+
+class communicationsSettingsDialog ( wx.Dialog ):
+	
+	def __init__( self, parent ):
+		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Communications settings", pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_DIALOG_STYLE )
+		
+		self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
+		
+		bSizer15 = wx.BoxSizer( wx.VERTICAL )
+		
+		bSizer19 = wx.BoxSizer( wx.HORIZONTAL )
+		
+		self.m_staticText4 = wx.StaticText( self, wx.ID_ANY, u"Arduino loop frequency [Hz]", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText4.Wrap( -1 )
+		bSizer19.Add( self.m_staticText4, 1, wx.ALL, 5 )
+		
+		self.arduinoLoopFreqTextControl = wx.TextCtrl( self, wx.ID_ANY, u"0", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer19.Add( self.arduinoLoopFreqTextControl, 0, wx.ALL, 5 )
+		
+		
+		bSizer15.Add( bSizer19, 1, wx.EXPAND, 5 )
+		
+		bSizer191 = wx.BoxSizer( wx.HORIZONTAL )
+		
+		self.m_staticText41 = wx.StaticText( self, wx.ID_ANY, u"Video frame rate [Hz]", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText41.Wrap( -1 )
+		bSizer191.Add( self.m_staticText41, 1, wx.ALL, 5 )
+		
+		self.videoFrameFreqTextControl = wx.TextCtrl( self, wx.ID_ANY, u"0", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer191.Add( self.videoFrameFreqTextControl, 0, wx.ALL, 5 )
+		
+		
+		bSizer15.Add( bSizer191, 1, wx.EXPAND, 5 )
+		
+		bSizer192 = wx.BoxSizer( wx.HORIZONTAL )
+		
+		self.m_staticText42 = wx.StaticText( self, wx.ID_ANY, u"Control inputs fequency [Hz]", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText42.Wrap( -1 )
+		bSizer192.Add( self.m_staticText42, 1, wx.ALL, 5 )
+		
+		self.controlInputsFreqTextControl = wx.TextCtrl( self, wx.ID_ANY, u"0", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer192.Add( self.controlInputsFreqTextControl, 0, wx.ALL, 5 )
+		
+		
+		bSizer15.Add( bSizer192, 1, wx.EXPAND, 5 )
+		
+		bSizer193 = wx.BoxSizer( wx.HORIZONTAL )
+		
+		self.m_staticText43 = wx.StaticText( self, wx.ID_ANY, u"Sensor readings frequency [Hz]", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText43.Wrap( -1 )
+		bSizer193.Add( self.m_staticText43, 1, wx.ALL, 5 )
+		
+		self.sensorReadingsFreqTextControl = wx.TextCtrl( self, wx.ID_ANY, u"0", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer193.Add( self.sensorReadingsFreqTextControl, 0, wx.ALL, 5 )
+		
+		
+		bSizer15.Add( bSizer193, 1, wx.EXPAND, 5 )
+		
+		
+		self.SetSizer( bSizer15 )
+		self.Layout()
+		bSizer15.Fit( self )
+		
+		self.Centre( wx.BOTH )
+		
+		# Connect Events
+		self.arduinoLoopFreqTextControl.Bind( wx.EVT_TEXT, self.setArduinoFreq )
+		self.videoFrameFreqTextControl.Bind( wx.EVT_TEXT, self.setVideoFreq )
+		self.controlInputsFreqTextControl.Bind( wx.EVT_TEXT, self.setControlFreq )
+		self.sensorReadingsFreqTextControl.Bind( wx.EVT_TEXT, self.setSensorsFreq )
+	
+	def __del__( self ):
+		pass
+	
+	
+	# Virtual event handlers, overide them in your derived class
+	def setArduinoFreq( self, event ):
+		event.Skip()
+	
+	def setVideoFreq( self, event ):
+		event.Skip()
+	
+	def setControlFreq( self, event ):
+		event.Skip()
+	
+	def setSensorsFreq( self, event ):
 		event.Skip()
 	
 

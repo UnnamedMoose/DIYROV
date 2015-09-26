@@ -6,33 +6,98 @@ Created on Sun May 24 16:34:31 2015
 @author: artur
 """
 
-import ROVgui_mainFrame
+import ROVguiBaseClasses
 import throttleDial
 import communicationProtocol
 
-import wx
+import wx, string
 from wx.lib import statbmp
 import cv2
 import os
 import serial
 
-class rovGuiArmDialog( ROVgui_mainFrame.armDialog ):
+class IntValidator(wx.PyValidator):
+    """ Validates data as it is entered into the text controls. """
+    def __init__(self):
+        wx.PyValidator.__init__(self)
+        self.Bind(wx.EVT_CHAR, self.OnChar)
+
+    def Clone(self):
+        """ Required Validator method """
+        return IntValidator()
+
+    def Validate(self, win):
+        return True
+
+    def TransferToWindow(self):
+        return True
+
+    def TransferFromWindow(self):
+        return True
+
+    def OnChar(self, event):
+        """ Do the validation """
+        keycode = int(event.GetKeyCode())
+        if keycode < 256:
+            key = chr(keycode)
+            if not key in string.digits: # skip this char since it's not a digit
+                return
+        event.Skip()
+
+class rovGuiArmDialog( ROVguiBaseClasses.armDialog ):
+    """ Halts the application while the arm method is active """
     def __init__(self,delay):
-        ROVgui_mainFrame.armDialog.__init__(self,None)
+        ROVguiBaseClasses.armDialog.__init__(self,None)
         self.armTimer.Start(delay*1000.0)
     
     def onClose(self,event):
         self.Destroy()
 
-class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
+class rovGuiCommunicationsSettingsDialog( ROVguiBaseClasses.communicationsSettingsDialog ):
+    """ Allows the user to adjust frequencies of sending and receiving data as well as
+    adjust Arduino clock speed """
+    def __init__(self,parent):
+        ROVguiBaseClasses.communicationsSettingsDialog.__init__(self,parent)
+        
+        # set up validators to prevent non-numeric stuff from being entered
+        self.arduinoLoopFreqTextControl.SetValidator(IntValidator())
+        self.videoFrameFreqTextControl.SetValidator(IntValidator())
+        self.controlInputsFreqTextControl.SetValidator(IntValidator())
+        self.sensorReadingsFreqTextControl.SetValidator(IntValidator())
+        
+        # set initial values
+        self.arduinoLoopFreqTextControl.SetValue(str(self.GetParent().freqArduino))
+        self.videoFrameFreqTextControl.SetValue(str(self.GetParent().freqVideo))
+        self.controlInputsFreqTextControl.SetValue(str(self.GetParent().freqControlInputs))
+        self.sensorReadingsFreqTextControl.SetValue(str(self.GetParent().freqSensorReadings))
+    
+    def setArduinoFreq(self,event):
+        if self.arduinoLoopFreqTextControl.GetValue():
+            self.GetParent().freqArduino = int(self.arduinoLoopFreqTextControl.GetValue())
+    
+    def setVideoFreq(self,event):
+        # TODO there should be a built-in way to transfer data, can't find it right now
+        if self.videoFrameFreqTextControl.GetValue():
+            self.GetParent().freqVideo = int(self.videoFrameFreqTextControl.GetValue())
+    
+    def setControlFreq(self,event):
+        if self.controlInputsFreqTextControl.GetValue():
+            self.GetParent().freqControlInputs = int(self.controlInputsFreqTextControl.GetValue())
+    
+    def setSensorsFreq(self,event):
+        if self.sensorReadingsFreqTextControl.GetValue():
+            self.GetParent().freqSensorReadings = int(self.sensorReadingsFreqTextControl.GetValue())
+
+class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
     
     def __init__(self):
         """ Create the main frame, deriving from a baseline object which has all the panels, buttons, etc.
         already defined. """
         # initialise the underlying object
-        ROVgui_mainFrame.mainFrame.__init__( self, None )
+        ROVguiBaseClasses.mainFrame.__init__( self, None )
         
         # set-up own fields
+        self.freqArduino = 100 # default refresh rate for the Arduino
         
         # video feed
         self.freqVideo = 15 # frame rate update frquency
@@ -109,10 +174,6 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
                     if self.checkConnection():
                         self.portOpen = True
                         self.currentPort = self.portChoice.GetStringSelection()
-                        # TODO redundant
-                        # set the initial state
-#                        self.updateState()
-#                        print "updated state"
                           
             except:
                 wx.MessageBox('Unknown problem occurred while establishing connection using the chosen port!', 'Error', 
@@ -146,7 +207,7 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         
     def onReconnectVideoFeed( self, event ):
         self.setupCapture()
-            
+    
     def onClose( self, event ):
         # close the serial port before terminating, need to make sure it isn't left hanging
         if self.portOpen:
@@ -172,7 +233,7 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
     def onArmModules(self,eent):
         """ Call the Arduino and ask it to arm modules; will wait for a gien time
         to give the MC enough slack to finish all tasks required """
-        
+
         if self.portOpen and self.checkConnection:
             communicationProtocol.sendMessage(self.arduinoSerialConnection,self.armModulesCommand)
         
@@ -186,37 +247,17 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
                 dialog.ShowModal()
             except KeyError:
                 wx.MessageBox('Something fell over while asking Arduino to arm!', 'Error', wx.OK | wx.ICON_ERROR)
-        
+
+    def onCommunicationsSettings(self,event):
+        dialog = rovGuiCommunicationsSettingsDialog(self)
+        dialog.ShowModal()
+
     def newSliderValue(self,event):
         """ temp function """
         # TODO remove when no longer needed
         self.controlParameters['motorPortHor'] = self.tempSlider.GetValue()
         print self.controlParameters['motorPortHor']
         
-# TODO redundant
-#    def onUpdateState ( self, event ):
-#        """ Calls the main function, only used to handle events """
-#        self.updateState()
-
-# TODO redundant
-#    def updateState(self):
-#        """ Main function responsible for sending the desired system state
-#        to the Arduino and updating the display """
-#        
-#        # attempt to communicate with the Arduino
-#        if self.portOpen:
-#            # make sure the connection has not been broken
-#            if self.checkConnection():
-#                # read the sensor values
-#                self.updateSensorReadings()
-#        
-#                # send the message
-#                communicationProtocol.sendMessage(self.arduinoSerialConnection,
-#                                                          self.controlParameters)
-#            
-#        # update the video feed
-#        self.getNewFrame()
-    
     #=================================
     # non-event funtion declarations
     
@@ -225,10 +266,18 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         if self.portOpen:
             # make sure the connection has not been broken
             if self.checkConnection():
-                # TODO consider flushing the output here; note it might interfere with the sensor readings request
                 # send the message
-#                pass
                 communicationProtocol.sendMessage(self.arduinoSerialConnection,self.controlParameters)
+                
+        # update the display of engine throttles
+        self.throttleDial_portVer.currentThrottle = self.controlParameters['motorPortVer']
+        self.throttleDial_portVer.Refresh()
+        self.throttleDial_portHor.currentThrottle = self.controlParameters['motorPortHor']
+        self.throttleDial_portHor.Refresh()
+        self.throttleDial_stbdVer.currentThrottle = self.controlParameters['motorStbdVer']
+        self.throttleDial_stbdVer.Refresh()
+        self.throttleDial_stbdHor.currentThrottle = self.controlParameters['motorStbdHor']
+        self.throttleDial_stbdHor.Refresh()
     
     def updateSensorReadings(self):
         """ Go over each sensor and get its reading, updating the internally stored values """
@@ -241,8 +290,6 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
                                                   self.sensorReadingsRequestObject)
                 
                 # get the most recent line from the serial port
-#                print "got:"
-#                print self.arduinoSerialConnection.readlines()
                 line = self.arduinoSerialConnection.readline()
                 
                 # pass on to the parser
