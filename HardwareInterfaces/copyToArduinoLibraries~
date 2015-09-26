@@ -1,0 +1,5 @@
+#!/bin/bash
+
+cp Module.cpp Module.h /usr/share/arduino/libraries/Module
+cp BrushlessDCMotor.cpp BrushlessDCMotor.h /usr/share/arduino/libraries/BrushlessDCMotor
+cp DepthSensor.cpp DepthSensor.h /usr/share/arduino/libraries/DepthSensor

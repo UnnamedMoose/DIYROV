@@ -10,6 +10,11 @@
 import wx
 import wx.xrc
 
+frameTimerID = 1000
+controlInputTimerID = 1001
+sensorReadingsTimerID = 1002
+armTimerID = 1003
+
 ###########################################################################
 ## Class mainFrame
 ###########################################################################
@@ -159,6 +164,12 @@ class mainFrame ( wx.Frame ):
 		
 		controlsSizerVert.Add( cameraChoiceVertSizer, 1, wx.EXPAND, 5 )
 		
+		self.armModules = wx.Button( self.controls, wx.ID_ANY, u"Arm modules", wx.DefaultPosition, wx.DefaultSize, 0 )
+		controlsSizerVert.Add( self.armModules, 0, wx.ALL|wx.EXPAND, 5 )
+		
+		self.tempSlider = wx.Slider( self.controls, wx.ID_ANY, 0, -100, 100, wx.DefaultPosition, wx.DefaultSize, wx.SL_HORIZONTAL )
+		controlsSizerVert.Add( self.tempSlider, 0, wx.ALL|wx.EXPAND, 5 )
+		
 		
 		self.controls.SetSizer( controlsSizerVert )
 		self.controls.Layout()
@@ -189,11 +200,11 @@ class mainFrame ( wx.Frame ):
 		self.SetSizer( mainHorSizer )
 		self.Layout()
 		self.frameTimer = wx.Timer()
-		self.frameTimer.SetOwner( self, wx.ID_ANY )
+		self.frameTimer.SetOwner( self, frameTimerID )
 		self.controlInputTimer = wx.Timer()
-		self.controlInputTimer.SetOwner( self, wx.ID_ANY )
+		self.controlInputTimer.SetOwner( self, controlInputTimerID )
 		self.sensorReadingsTimer = wx.Timer()
-		self.sensorReadingsTimer.SetOwner( self, wx.ID_ANY )
+		self.sensorReadingsTimer.SetOwner( self, sensorReadingsTimerID )
 		
 		self.Centre( wx.BOTH )
 		
@@ -203,9 +214,11 @@ class mainFrame ( wx.Frame ):
 		self.updatePortsButton.Bind( wx.EVT_BUTTON, self.onUpdatePorts )
 		self.cameraChoice.Bind( wx.EVT_CHOICE, self.onChoseCameraIndex )
 		self.cameraReconnectButton.Bind( wx.EVT_BUTTON, self.onReconnectVideoFeed )
-		self.Bind( wx.EVT_TIMER, self.onUpdateFrame, id=wx.ID_ANY )
-		self.Bind( wx.EVT_TIMER, self.onUpdateControlInputs, id=wx.ID_ANY )
-		self.Bind( wx.EVT_TIMER, self.onUpdateSensorReadings, id=wx.ID_ANY )
+		self.armModules.Bind( wx.EVT_BUTTON, self.onArmModules )
+		self.tempSlider.Bind( wx.EVT_SCROLL, self.newSliderValue )
+		self.Bind( wx.EVT_TIMER, self.onUpdateFrame, id=frameTimerID )
+		self.Bind( wx.EVT_TIMER, self.onUpdateControlInputs, id=controlInputTimerID )
+		self.Bind( wx.EVT_TIMER, self.onUpdateSensorReadings, id=sensorReadingsTimerID )
 	
 	def __del__( self ):
 		pass
@@ -227,6 +240,12 @@ class mainFrame ( wx.Frame ):
 	def onReconnectVideoFeed( self, event ):
 		event.Skip()
 	
+	def onArmModules( self, event ):
+		event.Skip()
+	
+	def newSliderValue( self, event ):
+		event.Skip()
+	
 	def onUpdateFrame( self, event ):
 		event.Skip()
 	
@@ -234,6 +253,43 @@ class mainFrame ( wx.Frame ):
 		event.Skip()
 	
 	def onUpdateSensorReadings( self, event ):
+		event.Skip()
+	
+
+###########################################################################
+## Class armDialog
+###########################################################################
+
+class armDialog ( wx.Dialog ):
+	
+	def __init__( self, parent ):
+		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = wx.EmptyString, pos = wx.DefaultPosition, size = wx.Size( 300,150 ), style = wx.DEFAULT_DIALOG_STYLE )
+		
+		self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
+		
+		armDialogSizer = wx.BoxSizer( wx.VERTICAL )
+		
+		self.armText = wx.StaticText( self, wx.ID_ANY, u"Arming modules, please wait ...", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.armText.Wrap( -1 )
+		armDialogSizer.Add( self.armText, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 5 )
+		
+		
+		self.SetSizer( armDialogSizer )
+		self.Layout()
+		self.armTimer = wx.Timer()
+		self.armTimer.SetOwner( self, armTimerID )
+		
+		self.Centre( wx.BOTH )
+		
+		# Connect Events
+		self.Bind( wx.EVT_TIMER, self.onClose, id=armTimerID )
+	
+	def __del__( self ):
+		pass
+	
+	
+	# Virtual event handlers, overide them in your derived class
+	def onClose( self, event ):
 		event.Skip()
 	
 

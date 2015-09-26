@@ -16,6 +16,14 @@ import cv2
 import os
 import serial
 
+class rovGuiArmDialog( ROVgui_mainFrame.armDialog ):
+    def __init__(self,delay):
+        ROVgui_mainFrame.armDialog.__init__(self,None)
+        self.armTimer.Start(delay*1000.0)
+    
+    def onClose(self,event):
+        self.Destroy()
+
 class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
     
     def __init__(self):
@@ -27,7 +35,7 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         # set-up own fields
         
         # video feed
-        self.freqVideo = 5 # frame rate update frquency
+        self.freqVideo = 15 # frame rate update frquency
         self.HUDcolour = (0,255,0) # RGB colour of the overlay on the HUD
         self.feedOn = False # switch indicating whether the video feed is on or off
         self.cameraIndex = 1 # index of the potential candidates for OpenCV capture object to actually use
@@ -39,6 +47,7 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         self.arduinoSerialConnection = 0 # holds the serial connecion object once it has been initialised
         self.freqSensorReadings = 5
         self.freqControlInputs = 5
+        self.arduinoRefreshRate = {'refreshRate':10} # How many milliseconds Arduino sleeps after each main loop.
         
         # create the internal bitmap object by using an empty bitmap, this will be projected onto the panel
         self.bmp = wx.EmptyBitmap(400,300)
@@ -80,6 +89,8 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         self.sensorParameters = {
             'depthReading':0, # depth reading [m]
             }
+        
+        self.armModulesCommand = {'armModules':1}
     
     def onChoseSerialPort( self, event ):
         """ picks up the newly selected port and attempts to connect to Arduino via it """
@@ -98,8 +109,10 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
                     if self.checkConnection():
                         self.portOpen = True
                         self.currentPort = self.portChoice.GetStringSelection()
+                        # TODO redundant
                         # set the initial state
-                        self.updateState()
+#                        self.updateState()
+#                        print "updated state"
                           
             except:
                 wx.MessageBox('Unknown problem occurred while establishing connection using the chosen port!', 'Error', 
@@ -155,7 +168,31 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         """ Send a request for new sensor data to Arduino, read it from serial and
         update the displays, plots, etc. """
         self.updateSensorReadings()
-
+    
+    def onArmModules(self,eent):
+        """ Call the Arduino and ask it to arm modules; will wait for a gien time
+        to give the MC enough slack to finish all tasks required """
+        
+        if self.portOpen and self.checkConnection:
+            communicationProtocol.sendMessage(self.arduinoSerialConnection,self.armModulesCommand)
+        
+            line = self.arduinoSerialConnection.readline()
+                
+            readings = communicationProtocol.readMessage(line)
+            
+            try:
+                delay = readings['setupDelay']
+                dialog = rovGuiArmDialog(float(delay)/1000.)
+                dialog.ShowModal()
+            except KeyError:
+                wx.MessageBox('Something fell over while asking Arduino to arm!', 'Error', wx.OK | wx.ICON_ERROR)
+        
+    def newSliderValue(self,event):
+        """ temp function """
+        # TODO remove when no longer needed
+        self.controlParameters['motorPortHor'] = self.tempSlider.GetValue()
+        print self.controlParameters['motorPortHor']
+        
 # TODO redundant
 #    def onUpdateState ( self, event ):
 #        """ Calls the main function, only used to handle events """
@@ -188,7 +225,9 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         if self.portOpen:
             # make sure the connection has not been broken
             if self.checkConnection():
+                # TODO consider flushing the output here; note it might interfere with the sensor readings request
                 # send the message
+#                pass
                 communicationProtocol.sendMessage(self.arduinoSerialConnection,self.controlParameters)
     
     def updateSensorReadings(self):
@@ -196,11 +235,14 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         if self.portOpen:
             # make sure the connection has not been broken
             if self.checkConnection():
+                pass
                 # ask the Arduino nicely to return the current readings
                 communicationProtocol.sendMessage(self.arduinoSerialConnection,
                                                   self.sensorReadingsRequestObject)
                 
                 # get the most recent line from the serial port
+#                print "got:"
+#                print self.arduinoSerialConnection.readlines()
                 line = self.arduinoSerialConnection.readline()
                 
                 # pass on to the parser
@@ -264,13 +306,13 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         except AttributeError:
             self.feedOn = False
             
-            wx.MessageBox('Could not start video feed!', 'Error', 
-                    wx.OK | wx.ICON_ERROR)
+            wx.MessageBox('Could not start video feed!', 'Error', wx.OK | wx.ICON_ERROR)
     
     def getNewFrame(self):
         """ This gets called when the internal timer requests a new frame to be updated.
         The function cameraCaptures a new frame and sends it to the static bitmap inside
         video feed panel """
+
         # see if the video feed is on
         if self.feedOn:
             
@@ -326,6 +368,15 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
             return False
         else:
             return True
+            
+    def updateArduinoRefreshRate(self, newRefreshRate):
+        """ Set a new refresh rate in milliseconds on the Arduino. """
+        self.arduinoRefreshRate["refreshRate"] = newRefreshRate # Use a dict to hold this value to be consistent with all other commands.
+        if self.portOpen:
+            # make sure the connection has not been broken
+            if self.checkConnection():
+                communicationProtocol.sendMessage(self.arduinoSerialConnection,self.arduinoRefreshRate)
+        
     
 # implements the GUI class to run a wxApp
 class rovGuiApp(wx.App):
