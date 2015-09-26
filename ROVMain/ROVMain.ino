@@ -9,14 +9,15 @@
  * @author: Aleksander Lidtke
  * @email: alekasdner.lidtke@gmail.com
  * @url: www.aleksanderlidtke.com
- * @since: 24 Sep 2015
- * @version: 2.1.1
+ * @since: 26 Sep 2015
+ * @version: 2.1.2
  * 
  * CHANGELOG
  *  5 Sep 2015 - 1.0.0 - Alek Lidtke - released the first version.
  *  6 Sep 2015 - 2.0.0 - Alek & Artur Lidtke - derived motor class from the Module class.
  * 24 Sep 2015 - 2.1.0 - Alek Lidtke - added command handling via dummy Modules.
  * 				 2.1.1 - Alek Lidtke - added ROV identifying strings.
+ * 26 Sep 2015 - 2.1.2 - Alek Lidtke - put arming modules into a dedicated function to not freeze the GUI when doing so.
  */
 
 // Custom includes.
@@ -30,7 +31,7 @@
 
 // ROV identifiers.
 const String ROV_MODEL = "zy3b";
-const String ROV_SW_VERSION = "2.1.1";
+const String ROV_SW_VERSION = "2.1.2";
 
 /* =============================================================================
  * FUNCTION DECLARATIONS.
@@ -39,6 +40,7 @@ const String ROV_SW_VERSION = "2.1.1";
 void parseInput(void);
 boolean getSerial(void);
 void sendSensorReadings(void);
+void armModules(void);
 
 /* =============================================================================
  * MOTOR DEFINITIONS.
@@ -64,6 +66,8 @@ BrushlessDCMotor engine4 = BrushlessDCMotor("motorStbdVer", THROTTLE_STEPS, MOTO
  * MISC ACTUATOR AND COMMAND DEFINITIONS.
  * =============================================================================
  */
+Module armModulesModule = Module("armModules"); // Arms all the sensors and actuators.
+
 Module sendSensorReadingsModule = Module("sendSensorReadings"); // Sends sensor readings over serial.
 
 Module refreshRate = Module("refreshRate"); // Changes the delay in the main loop.
@@ -95,7 +99,7 @@ const char OUTPUT_START_CHAR = '<'; // At the start of every command message sen
 const char END_CHAR = ';'; // End of the command message sent to and from the Arduino.
 const char DATA_DELIMITER[2] = ","; // Splits the command name and value. For some reason has to be size 2.
 
-Module* actuators[] = {&engine1, &engine2, &engine3, &engine4, &sendSensorReadingsModule, &refreshRate, &forwardLED};
+Module* actuators[] = {&armModulesModule, &engine1, &engine2, &engine3, &engine4, &sendSensorReadingsModule, &refreshRate, &forwardLED};
 Module* sensors[] = {&depthSensor, &depthSensor2};
 
 /* =============================================================================
@@ -105,6 +109,7 @@ Module* sensors[] = {&depthSensor, &depthSensor2};
 void setup(void)
 /* Prepare to listen to commands over serial and start everything up. */
 {
+	armModulesModule.setValue(0); // Don't arm the modules by default, wait for a command.
 	refreshRate.setValue(100); // Set default delay in milliseconds in the main loop/
 
 	//TODO: do some system checks, like battery level, connections etc.
@@ -112,23 +117,7 @@ void setup(void)
 	// Start serial comms at the same baud rate as the engines.
 	Serial.begin(engine1.serialBaudRate);
 	
-	// Arm all the modules.
-	int setupDelay(0);
-	for(int i=0;i<sizeof(actuators)/sizeof(actuators[0]);i++)
-	{
-		int delayRequested = actuators[i]->arm();
-		if (delayRequested > setupDelay) setupDelay = delayRequested;
-	}
-	for(int i=0;i<sizeof(sensors)/sizeof(sensors[0]);i++)
-	{
-		int delayRequested = sensors[i]->arm();
-		if (delayRequested > setupDelay) setupDelay = delayRequested;
-	}
-	delay(setupDelay); // Wait for as long as required by the slowest arming module.
-	
-	//TODO: do whatever else operations we want to do at start-up.
-	
-	Serial.println("ROV "+ROV_MODEL+" v. "+ROV_SW_VERSION+" listening to commands."); //TODO: could add VERSION, ROVMODEL etc. consts somewhere so we know what ROV we're using.
+	Serial.println("ROV "+ROV_MODEL+" v. "+ROV_SW_VERSION+" listening to commands.");
 }
 
 void loop(void)
@@ -145,6 +134,12 @@ void loop(void)
 		}
 	}
 
+	// Arm the modules if requested.
+	if(armModulesModule.getValue()==1)
+	{
+		armModules(); // This function handles everything.
+	}
+	
 	// Send readings from all the sensors over serial after this has been requested by a command.
 	if(sendSensorReadingsModule.getValue()==1)
 	{
@@ -271,4 +266,35 @@ void sendSensorReadings(void)
 	
 	Serial.println( outputDataBuffer ); // Send the formatted message.
 	outputDataBuffer = ""; // Restart the buffer so it's clean before sending the next message.
+}
+
+void armModules(void)
+/* Arm all the modules registered in actuators and sensors arrays by calling their
+ * arm methods and waiting for the requested duration. Wait for the longest
+ * duration necessary to arm any module and send a message over serial saying for
+ * how long Arduino  will be sleeping so that the GUI knows.
+ */
+{
+	int setupDelay(0); // By default wait for 0 seconds, i.e. arm nothing.
+	for(int i=0;i<sizeof(actuators)/sizeof(actuators[0]);i++) // Arm all actuators.
+	{
+		int delayRequested = actuators[i]->arm();
+		if (delayRequested > setupDelay) setupDelay = delayRequested;
+	}
+	for(int i=0;i<sizeof(sensors)/sizeof(sensors[0]);i++) // Arm all sensors.
+	{
+		int delayRequested = sensors[i]->arm();
+		if (delayRequested > setupDelay) setupDelay = delayRequested;
+	}
+	
+	// Send the message saying how long the delay will last.
+	outputDataBuffer += OUTPUT_START_CHAR; // Start the message.
+	outputDataBuffer += "setupDelay";
+	outputDataBuffer += DATA_DELIMITER;
+	outputDataBuffer += String(setupDelay);
+	outputDataBuffer += END_CHAR; // Terminate the message.
+	Serial.println( outputDataBuffer ); // Send the formatted message.
+	outputDataBuffer = ""; // Restart the buffer so it's clean before sending the next message.
+	
+	delay(setupDelay); // Wait for as long as required by the slowest arming module.
 }
