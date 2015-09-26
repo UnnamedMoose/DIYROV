@@ -148,7 +148,8 @@ void loop(void)
 	// Send readings from all the sensors over serial after this has been requested by a command.
 	if(sendSensorReadingsModule.getValue()==1)
 	{
-		sendSensorReadings();
+		sendSensorReadings(); // Send the readings.
+		sendSensorReadingsModule.setValue(0); // Re-set the flag and wait for it to be send next time readings are required.
 	}
 	
 	// Reduce rate at which stuff happens.

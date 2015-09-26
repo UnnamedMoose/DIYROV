@@ -63,19 +63,21 @@ def readMessage(s):
     ---------
         @param s - string representation of an input message
     """
-    if s:
-        s = s.strip()
-        if s[0] == INPUT_START_CHAR and s[-1] == MESSAGE_END_CHAR:
-            # split into values and keys
-            s = s.lstrip(INPUT_START_CHAR).rstrip(MESSAGE_END_CHAR).split(DATA_DELIMITER)
-
-            readings = {}
-            try:
-                # concentrate into a dictionary
-                for iKey in range(0,len(s),2):
-                    readings[s[iKey]] = s[iKey+1]
-            except IndexError:
-                pass
-            return readings
-
+    try:
+        if s:
+            s = s.strip()
+            if s[0] == INPUT_START_CHAR and s[-1] == MESSAGE_END_CHAR:
+                # split into values and keys
+                s = s.lstrip(INPUT_START_CHAR).rstrip(MESSAGE_END_CHAR).split(DATA_DELIMITER)
+    
+                readings = {}
+                try:
+                    # concentrate into a dictionary
+                    for iKey in range(0,len(s),2):
+                        readings[s[iKey]] = s[iKey+1]
+                except IndexError:
+                    pass
+                return readings
+    except:
+        pass
     return {}

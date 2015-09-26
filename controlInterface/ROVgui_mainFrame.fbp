@@ -1548,7 +1548,25 @@
                 <property name="oneshot">0</property>
                 <property name="period">1000</property>
                 <property name="permission">protected</property>
-                <event name="OnTimer">onUpdateState</event>
+                <event name="OnTimer">onUpdateFrame</event>
+            </object>
+            <object class="wxTimer" expanded="1">
+                <property name="enabled">0</property>
+                <property name="id">wxID_ANY</property>
+                <property name="name">controlInputTimer</property>
+                <property name="oneshot">0</property>
+                <property name="period">1000</property>
+                <property name="permission">protected</property>
+                <event name="OnTimer">onUpdateControlInputs</event>
+            </object>
+            <object class="wxTimer" expanded="1">
+                <property name="enabled">0</property>
+                <property name="id">wxID_ANY</property>
+                <property name="name">sensorReadingsTimer</property>
+                <property name="oneshot">0</property>
+                <property name="period">1000</property>
+                <property name="permission">protected</property>
+                <event name="OnTimer">onUpdateSensorReadings</event>
             </object>
         </object>
     </object>

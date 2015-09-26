@@ -25,16 +25,20 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         ROVgui_mainFrame.mainFrame.__init__( self, None )
         
         # set-up own fields
-        self.fps = 15 # frame rate of the timer
-        self.HUDcolour = (0,255,0) # RGB colour of the overlay on the HUD
         
+        # video feed
+        self.freqVideo = 5 # frame rate update frquency
+        self.HUDcolour = (0,255,0) # RGB colour of the overlay on the HUD
         self.feedOn = False # switch indicating whether the video feed is on or off
         self.cameraIndex = 1 # index of the potential candidates for OpenCV capture object to actually use
         self.cameraCapture = 0 # this will hold the OpenCV VideocameraCapture object once it gets initialised
         
+        # serial communication
         self.portOpen = False # indicates if the serial communication port is open
         self.currentPort = 'None' # currently chosen port
         self.arduinoSerialConnection = 0 # holds the serial connecion object once it has been initialised
+        self.freqSensorReadings = 5
+        self.freqControlInputs = 5
         
         # create the internal bitmap object by using an empty bitmap, this will be projected onto the panel
         self.bmp = wx.EmptyBitmap(400,300)
@@ -46,8 +50,10 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
         self.videoFeedPanel.Layout()
         self.videoFeedPanel.SetFocus()
         
-        # initialise the timing function - will send the data to Arduino at a specific interval
-        self.frameTimer.Start(int(1.0/self.fps*1000.0))
+        # initialise the timing functions - will send and receive the data to/from Arduino at a specific interval
+        self.frameTimer.Start(int(1.0/self.freqVideo*1000.0))
+        self.sensorReadingsTimer.Start(int(1.0/self.freqSensorReadings*1000.0))
+        self.controlInputTimer.Start(int(1.0/self.freqControlInputs*1000.0))
         
         # initialise throttle indicators
         self.throttleDial_portHor = throttleDial.Throttle(self.throttleDial_portHor, -1,sizeTuple=(40,115))
@@ -69,6 +75,8 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
             }
         
         # names and values of sensor readings
+        # need to call this for sensor readings to be sent
+        self.sensorReadingsRequestObject = {'sendSensorReadings':1}
         self.sensorParameters = {
             'depthReading':0, # depth reading [m]
             }
@@ -86,6 +94,7 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
     
                     self.arduinoSerialConnection = serial.Serial(self.portChoice.GetStringSelection(),
                                                                  19200, timeout = 2)
+                    
                     if self.checkConnection():
                         self.portOpen = True
                         self.currentPort = self.portChoice.GetStringSelection()
@@ -134,31 +143,73 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
             self.cameraCapture.release()
         self.Destroy()
 
-    def onUpdateState ( self, event ):
-        """ Calls the main function, only used to handle events """
-        self.updateState()
-        
-    def updateState(self):
-        """ Main function responsible for sending the desired system state
-        to the Arduino and updating the display """
-        
-        # attempt to communicate with the Arduino
-        if self.portOpen:
-            # make sure the connection has not been broken
-            if self.checkConnection():
-                # read the sensor values
-                self.updateSensorReadings()
-        
-                # send the message
-                communicationProtocol.sendMessage(self.arduinoSerialConnection,
-                                                  self.controlParameters)
-        
-        # update the video feed
+    def onUpdateFrame(self,event):
+        """ call the frame update when timer is activated """
         self.getNewFrame()
+    
+    def onUpdateControlInputs(self,event):
+        """ Send the control data to Arduino to set rps etc. """
+        self.updateControlInputs()
+    
+    def onUpdateSensorReadings(self,event):
+        """ Send a request for new sensor data to Arduino, read it from serial and
+        update the displays, plots, etc. """
+        self.updateSensorReadings()
+
+# TODO redundant
+#    def onUpdateState ( self, event ):
+#        """ Calls the main function, only used to handle events """
+#        self.updateState()
+
+# TODO redundant
+#    def updateState(self):
+#        """ Main function responsible for sending the desired system state
+#        to the Arduino and updating the display """
+#        
+#        # attempt to communicate with the Arduino
+#        if self.portOpen:
+#            # make sure the connection has not been broken
+#            if self.checkConnection():
+#                # read the sensor values
+#                self.updateSensorReadings()
+#        
+#                # send the message
+#                communicationProtocol.sendMessage(self.arduinoSerialConnection,
+#                                                          self.controlParameters)
+#            
+#        # update the video feed
+#        self.getNewFrame()
     
     #=================================
     # non-event funtion declarations
     
+    def updateControlInputs(self):
+        """ sends the control inputs to Arduino """
+        if self.portOpen:
+            # make sure the connection has not been broken
+            if self.checkConnection():
+                # send the message
+                communicationProtocol.sendMessage(self.arduinoSerialConnection,self.controlParameters)
+    
+    def updateSensorReadings(self):
+        """ Go over each sensor and get its reading, updating the internally stored values """
+        if self.portOpen:
+            # make sure the connection has not been broken
+            if self.checkConnection():
+                # ask the Arduino nicely to return the current readings
+                communicationProtocol.sendMessage(self.arduinoSerialConnection,
+                                                  self.sensorReadingsRequestObject)
+                
+                # get the most recent line from the serial port
+                line = self.arduinoSerialConnection.readline()
+                
+                # pass on to the parser
+                readings = communicationProtocol.readMessage(line)
+                
+                # update sensor and other readings
+                for readingKey in readings:
+                    self.sensorParameters[readingKey] = float(readings[readingKey])
+                    
     def updatePorts(self):
         """ Checks the list of open serial ports and updates the internal list
         and the options shown in the dropdown selection menu. """
@@ -229,7 +280,6 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
                 # apply any colour filters, get the size of the frame
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 height, width = frame.shape[:2]
-                
                 # put on overlay of telemetry
                 cv2.putText(frame,'DEPTH: {:6.2f} m'.format(self.sensorParameters['depthReading']),
                             (int(0.05*width),int(0.05*height)),
@@ -276,18 +326,6 @@ class rovGuiMainFrame( ROVgui_mainFrame.mainFrame ):
             return False
         else:
             return True
-    
-    def updateSensorReadings(self):
-        """ Go over each sensor and get its reading, updating the internally stored values """
-        # get the most recent line from the serial port
-        line = self.arduinoSerialConnection.readline()
-        
-        # pass on to the parser
-        readings = communicationProtocol.readMessage(line)
-        
-        # update sensor and other readings
-        for readingKey in readings:
-            self.sensorParameters[readingKey] = readings[readingKey]
     
 # implements the GUI class to run a wxApp
 class rovGuiApp(wx.App):
