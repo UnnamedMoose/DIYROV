@@ -55,6 +55,7 @@ int Module::arm(void)
  */
 {
 // Do nothing by default.
+	return 0;
 }
 
 const char* Module::getIdentifier(void)

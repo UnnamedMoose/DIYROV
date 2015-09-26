@@ -8,11 +8,12 @@
  * @author: Aleksander & Artur Lidtke
  * @email: aleksadner.lidtke@gmail.com
  * @url: www.aleksanderlidtke.com
- * @since:  6 Sep 2015
- * @version: 1.0.0
+ * @since: 26 Sep 2015
+ * @version: 1.0.1
  * 
  * CHANGELOG
  *  6 Sep 2015 - 1.0.0 - Alek Lidtke - released the first version.
+ * 26 Sep 2015 - 1.0.1 - Alek Lidtke - started to return 0 in the arm method by default - now we use Modules directly to parse SW commands so need to call this method and return something meaningful.
  */
 #ifndef MODULE_H
 #define MODULE_H
