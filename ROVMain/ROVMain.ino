@@ -20,6 +20,8 @@
  * 26 Sep 2015 - 2.1.2 - Alek Lidtke - put arming modules into a dedicated function to not freeze the GUI when doing so.
  */
 
+#define DEBUG_PRINTOUT
+
 // Custom includes.
 #include "Module.h"
 #include "BrushlessDCMotor.h"
@@ -220,10 +222,13 @@ void parseInput(void)
   	// If next actuator index < 0 we have no value to read now
   	if (nextActuatorIndex >= 0)
   	{
-  		Serial.print("ROV "+ROV_MODEL+" v. "+ROV_SW_VERSION+" trying to set value of actuator ");
-  		Serial.print(actuators[nextActuatorIndex]->getIdentifier());
-  		Serial.print(" to ");
-  		Serial.println( String(int(atof(token))) );
+  		#ifdef DEBUG_PRINTOUT
+	  		Serial.print("ROV "+ROV_MODEL+" v. "+ROV_SW_VERSION+" trying to set value of actuator ");
+	  		Serial.print(actuators[nextActuatorIndex]->getIdentifier());
+	  		Serial.print(" to ");
+	  		Serial.println( String(int(atof(token))) );
+  		#endif
+  		
   		actuators[nextActuatorIndex] -> setValue( int(atof(token)) );
   		// Indicate that on the next pass there is no value to read.
   		nextActuatorIndex = -1;

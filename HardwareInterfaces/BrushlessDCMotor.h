@@ -8,14 +8,15 @@
  * @author: Aleksander Lidtke
  * @email: aleksadner.lidtke@gmail.com
  * @url: www.aleksanderlidtke.com
- * @since: 19 Sep 2015
- * @version: 2.1.0
+ * @since: 26 Sep 2015
+ * @version: 2.1.1
  * 
  * CHANGELOG
  *  5 Sep 2015 - 1.0.0 - Alek Lidtke - released the first version.
  * 	6 Sep 2015 - 2.0.0 - Alek & Artur Lidtke - derived this from the Module class.
  * 19 Sep 2015 - 2.1.0 - Alek & Artur Lidtke - created a decicated method to arm
  * 	the motors, attaching servos in the constructor doesn't work.
+ * 26 Sep 2015 - 2.1.1 - Alek Lidtke - limited when the debugging messages will be printed.
  */
 #ifndef BRUSHLESSDCMOTOR_H
 #define BRUSHLESSDCMOTOR_H
