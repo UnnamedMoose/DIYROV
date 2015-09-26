@@ -138,6 +138,7 @@ void loop(void)
 	if(armModulesModule.getValue()==1)
 	{
 		armModules(); // This function handles everything.
+		armModulesModule.setValue(0); // We're done arming now.
 	}
 	
 	// Send readings from all the sensors over serial after this has been requested by a command.
