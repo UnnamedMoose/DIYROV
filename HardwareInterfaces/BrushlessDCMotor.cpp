@@ -161,7 +161,9 @@ void BrushlessDCMotor::setValue(int newThrust)
 	
 	currentValue=newThrust;
 	currentPulseWidth = int( minPulseWidth + abs(currentValue)/double(maxThrustValue) * (maxPulseWidth-minPulseWidth) ); // Scale the desired throttle to pulse width and change to an int, as expected by the Servo class.
-	Serial.print("    Setting pulse width for motor ");Serial.print(identifier);Serial.print( " to ");Serial.println( String(currentPulseWidth) );
+	#ifdef DEBUG_PRINTOUT
+		Serial.print("    Setting pulse width for motor ");Serial.print(identifier);Serial.print( " to ");Serial.println( String(currentPulseWidth) );
+	#endif
 	
 	motor.writeMicroseconds(currentPulseWidth);
 }
@@ -185,7 +187,9 @@ int BrushlessDCMotor::arm(void)
 {
 	motor.attach(motorPin,minPulseWidth,maxPulseWidth);
 	setPulseWidth(armPulseWidth);
-	Serial.print("Armed motor: ");
-	Serial.println(identifier);
+	#ifdef DEBUG_PRINTOUT
+		Serial.print("Armed motor: ");
+		Serial.println(identifier);
+	#endif
 	return 25000;
 }
