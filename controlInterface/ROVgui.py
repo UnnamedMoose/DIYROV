@@ -81,14 +81,17 @@ class rovGuiCommunicationsSettingsDialog( ROVguiBaseClasses.communicationsSettin
         # TODO there should be a built-in way to transfer data, can't find it right now
         if self.videoFrameFreqTextControl.GetValue():
             self.GetParent().freqVideo = int(self.videoFrameFreqTextControl.GetValue())
+            self.GetParent().frameTimer.Start(int(1.0/self.GetParent().freqVideo*1000.0))
     
     def setControlFreq(self,event):
         if self.controlInputsFreqTextControl.GetValue():
             self.GetParent().freqControlInputs = int(self.controlInputsFreqTextControl.GetValue())
+            self.GetParent().controlInputTimer.Start(int(1.0/self.GetParent().freqControlInputs*1000.0))
     
     def setSensorsFreq(self,event):
         if self.sensorReadingsFreqTextControl.GetValue():
             self.GetParent().freqSensorReadings = int(self.sensorReadingsFreqTextControl.GetValue())
+            self.GetParent().sensorReadingsTimer.Start(int(1.0/self.GetParent().freqSensorReadings*1000.0))
 
 class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
     
@@ -102,7 +105,7 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         self.freqArduino = 100 # default refresh rate for the Arduino in Hz
         
         # video feed
-        self.freqVideo = 15 # frame rate update frquency
+        self.freqVideo = 5 # frame rate update frquency
         self.HUDcolour = (0,255,0) # RGB colour of the overlay on the HUD
         self.feedOn = False # switch indicating whether the video feed is on or off
         self.cameraIndex = 1 # index of the potential candidates for OpenCV capture object to actually use
@@ -388,7 +391,7 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         try:
             # create a cameraCapture object using OpenCV
             self.cameraCapture = cv2.VideoCapture(self.cameraIndex)
-            
+
             # get the current frame, convert colours and store
             ret, frame = self.cameraCapture.read()
             height, width = frame.shape[:2]
@@ -420,10 +423,12 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
             
             # get a new frame, if it's OK then update the display
             ret, frame = self.cameraCapture.read()
+            
             if ret:
                 # apply any colour filters, get the size of the frame
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 height, width = frame.shape[:2]
+
                 # put on overlay of telemetry
                 cv2.putText(frame,'DEPTH: {:6.2f} m'.format(self.sensorParameters['depthReading']),
                             (int(0.05*width),int(0.05*height)),
