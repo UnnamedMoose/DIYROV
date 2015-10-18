@@ -96,7 +96,7 @@ class mainFrame ( wx.Frame ):
 		
 		self.portChoiceLabel = wx.StaticText( self.controls, wx.ID_ANY, u"Serial port:", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.portChoiceLabel.Wrap( -1 )
-		portChoiceDropdownHorSizer.Add( self.portChoiceLabel, 0, wx.ALL|wx.EXPAND, 5 )
+		portChoiceDropdownHorSizer.Add( self.portChoiceLabel, 1, wx.ALL|wx.EXPAND, 5 )
 		
 		
 		portChoiceDropdownHorSizer.AddSpacer( ( 0, 0), 1, wx.EXPAND, 5 )
@@ -104,7 +104,7 @@ class mainFrame ( wx.Frame ):
 		portChoiceChoices = []
 		self.portChoice = wx.Choice( self.controls, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, portChoiceChoices, 0 )
 		self.portChoice.SetSelection( 0 )
-		portChoiceDropdownHorSizer.Add( self.portChoice, 1, wx.ALIGN_BOTTOM|wx.ALIGN_RIGHT|wx.ALL|wx.EXPAND, 5 )
+		portChoiceDropdownHorSizer.Add( self.portChoice, 0, wx.ALIGN_BOTTOM|wx.ALIGN_RIGHT|wx.ALL|wx.EXPAND, 5 )
 		
 		
 		controlsSizerVert.Add( portChoiceDropdownHorSizer, 1, wx.EXPAND, 5 )
@@ -124,7 +124,7 @@ class mainFrame ( wx.Frame ):
 		
 		self.cameraChoiceLabel = wx.StaticText( self.controls, wx.ID_ANY, u"Camera index:", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.cameraChoiceLabel.Wrap( -1 )
-		cameraChoiceDropdownHorSizer.Add( self.cameraChoiceLabel, 0, wx.ALL|wx.EXPAND, 5 )
+		cameraChoiceDropdownHorSizer.Add( self.cameraChoiceLabel, 1, wx.ALL|wx.EXPAND, 5 )
 		
 		
 		cameraChoiceDropdownHorSizer.AddSpacer( ( 0, 0), 1, wx.EXPAND, 5 )
@@ -148,8 +148,33 @@ class mainFrame ( wx.Frame ):
 		
 		controlsSizerVert.Add( cameraChoiceButtonHorSizer, 1, wx.EXPAND, 5 )
 		
+		controllerChoiceHorSizer = wx.BoxSizer( wx.HORIZONTAL )
+		
+		self.controllerChoiceLabel = wx.StaticText( self.controls, wx.ID_ANY, u"Controller:", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.controllerChoiceLabel.Wrap( -1 )
+		controllerChoiceHorSizer.Add( self.controllerChoiceLabel, 1, wx.ALL|wx.EXPAND, 5 )
+		
+		controllerChoiceChoices = []
+		self.controllerChoice = wx.Choice( self.controls, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, controllerChoiceChoices, 0 )
+		self.controllerChoice.SetSelection( 0 )
+		controllerChoiceHorSizer.Add( self.controllerChoice, 0, wx.ALL|wx.EXPAND, 5 )
+		
+		
+		controlsSizerVert.Add( controllerChoiceHorSizer, 1, wx.EXPAND, 5 )
+		
+		controllerChoiceButtonHorSizer = wx.BoxSizer( wx.HORIZONTAL )
+		
+		
+		controllerChoiceButtonHorSizer.AddSpacer( ( 0, 0), 1, wx.EXPAND, 5 )
+		
+		self.updateControllersButton = wx.Button( self.controls, wx.ID_ANY, u"Update controllers", wx.DefaultPosition, wx.DefaultSize, 0 )
+		controllerChoiceButtonHorSizer.Add( self.updateControllersButton, 0, wx.ALL|wx.EXPAND, 5 )
+		
+		
+		controlsSizerVert.Add( controllerChoiceButtonHorSizer, 1, wx.EXPAND, 5 )
+		
 		self.armModules = wx.Button( self.controls, wx.ID_ANY, u"Arm modules", wx.DefaultPosition, wx.DefaultSize, 0 )
-		controlsSizerVert.Add( self.armModules, 0, wx.ALL|wx.EXPAND, 5 )
+		controlsSizerVert.Add( self.armModules, 1, wx.ALL|wx.EXPAND, 5 )
 		
 		self.tempSlider = wx.Slider( self.controls, wx.ID_ANY, 0, -100, 100, wx.DefaultPosition, wx.DefaultSize, wx.SL_HORIZONTAL )
 		controlsSizerVert.Add( self.tempSlider, 0, wx.ALL|wx.EXPAND, 5 )
@@ -207,6 +232,8 @@ class mainFrame ( wx.Frame ):
 		self.updatePortsButton.Bind( wx.EVT_BUTTON, self.onUpdatePorts )
 		self.cameraChoice.Bind( wx.EVT_CHOICE, self.onChoseCameraIndex )
 		self.cameraReconnectButton.Bind( wx.EVT_BUTTON, self.onReconnectVideoFeed )
+		self.controllerChoice.Bind( wx.EVT_CHOICE, self.onChoseController )
+		self.updateControllersButton.Bind( wx.EVT_BUTTON, self.onUpdateControllers )
 		self.armModules.Bind( wx.EVT_BUTTON, self.onArmModules )
 		self.tempSlider.Bind( wx.EVT_SCROLL, self.newSliderValue )
 		self.Bind( wx.EVT_TIMER, self.onUpdateFrame, id=frameTimerID )
@@ -232,6 +259,12 @@ class mainFrame ( wx.Frame ):
 		event.Skip()
 	
 	def onReconnectVideoFeed( self, event ):
+		event.Skip()
+	
+	def onChoseController( self, event ):
+		event.Skip()
+	
+	def onUpdateControllers( self, event ):
 		event.Skip()
 	
 	def onArmModules( self, event ):

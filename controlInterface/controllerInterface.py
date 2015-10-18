@@ -52,8 +52,8 @@ class controller(object):
     axesMap = {
         0:'lhsStickXaxis',
         1:'lhsStickYaxis',
-        3:'rshStickXaxis',
-        4:'rshStickYaxis',
+        3:'rhsStickXaxis',
+        4:'rhsStickYaxis',
         2:'lhsTriggerAxis',
         5:'rhsTriggerAxis',
         }
@@ -62,8 +62,8 @@ class controller(object):
         1:'butB',
         2:'butX',
         3:'butY',
-        4:'lhsBut',
-        5:'rhsBut',
+        4:'lhsTriggerBut',
+        5:'rhsTriggerBut',
         6:'lhsChoiceBut',
         7:'rshChoiceBut',
         8:'midChoiceBut',
@@ -79,6 +79,20 @@ class controller(object):
         self.josyickObject = -1
         # name identifier
         self.name = 'None'
+        
+        # direct values of the controller outputs
+        # map name of each button and controller axis to a dict of values
+        # note: for sticks the x-direction +ve RIGHT, y-direction +ve DOWN
+        # BUT for the hat (round 4-option select thingy) they are x +ve right and y +ve up
+        self.axesValues = dict(zip(controller.axesMap.values(),
+                                   [0 for i in range(len(controller.axesMap))]))
+        self.buttonValues = dict(zip(controller.buttonsMap.values(),
+                                   [False for i in range(len(controller.buttonsMap))]))
+        self.hatX,self.hatY = 0,0
+        
+        # zero position of the triggers is at -1 (when they are not pressed)
+        self.axesValues['lhsTriggerAxis'] = -1
+        self.axesValues['rhsTriggerAxis'] = -1
     
     def setControllerIndex(self,newIndex):
         """ Change the controller index - there may be a few connected at any one time """
@@ -101,29 +115,35 @@ class controller(object):
         Should be called with a refresh rate sufficient to ensure smooth use as
         it will take all of the event available on the stack and parse them in one
         go, clearing the stack afterwards """
-        
-        axisValues = dict(zip(controller.axesMap.keys(), [0 for i in range(len(controller.axesMap))]))
-        print axisValues
-        
+
         # go over each pygame event
         for event in pygame.event.get():
             if event.type == JOYAXISMOTION:
                 # check if this event relates to this controller, ignore if not
                 if event.joy != self.controllerIndex: continue
-                
-                # axis that moved
-                print event.joy
-                print "' axis",event.axis,"motion."
-                if event.axis == 4:
-                        print ' axis 4', event.value
-                elif event.axis == 3:
-                        print ' axis 3', event.value
+                    
+                axisName = controller.axesMap[event.axis]
+                self.axesValues[axisName] = event.value
+            
+            elif event.type == JOYBUTTONDOWN:
+                # do nothing when a button is pressed down
+                pass
+            
+            elif event.type == JOYBUTTONUP:
+                # flip the bool value when a button is released
+                buttonName = controller.buttonsMap[event.button]
+                self.buttonValues[buttonName] = not self.buttonValues[buttonName]
 
+            elif event.type == JOYHATMOTION:
+                self.hatX = event.value[0]
+                self.hatY = event.value[1]
+
+"""
 cont = controller()
 cont.setControllerIndex(0)
 cont.parseEvents()
 
-"""    
+   
 def main():
     "Opens a window and prints events to the terminal. Closes on ESC or QUIT."
     pygame.init()
@@ -158,10 +178,10 @@ def main():
                             
                     elif event.type == JOYAXISMOTION:
                             print "Joystick '",joysticks[event.joy].get_name(),"' axis",event.axis,"motion."
-                            if event.axis == 4:
-                                    print ' axis 4', event.value
-                            elif event.axis == 3:
-                                    print ' axis 3', event.value
+                            if event.axis == 2:
+                                    print ' axis 2', event.value
+                            elif event.axis == 5:
+                                    print ' axis 5', event.value
                     elif event.type == JOYBUTTONDOWN:
                             print ("Joystick '",joysticks[event.joy].get_name(),
                                 "' button",event.button,"down.")
@@ -174,4 +194,4 @@ def main():
 
 if __name__ == "__main__":
         main()
-"""
+""" 

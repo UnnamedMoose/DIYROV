@@ -9,6 +9,7 @@ Created on Sun May 24 16:34:31 2015
 import ROVguiBaseClasses
 import throttleDial
 import communicationProtocol
+import controllerInterface
 
 import wx, string
 from wx.lib import statbmp
@@ -114,6 +115,10 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         self.freqSensorReadings = 5
         self.freqControlInputs = 5
         
+        # controller
+        self.controller = 0
+        self.currentController = 'None'
+        
         # create the internal bitmap object by using an empty bitmap, this will be projected onto the panel
         self.bmp = wx.EmptyBitmap(400,300)
         self.videoFeed = statbmp.GenStaticBitmap(self.videoFeedPanel, wx.ID_ANY,self.bmp)
@@ -138,6 +143,10 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         # update the ports available at start-up
         self.updatePorts()
         self.portChoice.SetSelection(0)
+        
+        # repeat for controllers
+        self.updateControllers()
+        self.controllerChoice.SetSelection(0)
         
         # keeps the names and values of all control parameters
         self.controlParameters = {
@@ -191,6 +200,7 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
                           wx.OK | wx.ICON_ERROR)
                 self.arduinoSerialConnection = 0
                 self.portOpen = False
+                self.updatePorts()
         
         # if None is chosen then close the current port
         else:
@@ -224,9 +234,6 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         """ call the frame update when timer is activated """
         self.getNewFrame()
     
-    
-    
-    
     def onUpdateControlInputs(self,event):
         """ Send the control data to Arduino to set rps etc. """
         self.updateControlInputs()
@@ -255,8 +262,36 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
                 wx.MessageBox('Something fell over while asking Arduino to arm!', 'Error', wx.OK | wx.ICON_ERROR)
 
     def onCommunicationsSettings(self,event):
+        """ show a dialog for customising communicaitons settings """
         dialog = rovGuiCommunicationsSettingsDialog(self)
         dialog.ShowModal()
+        
+    def onUpdateControllers(self,event):
+        """ update the list of choices for available controllers """
+        self.updateControllers()
+    
+    def onChoseController(self,event):
+        """ set the newly chosen controller """
+        # ignore the None option
+        if self.controllerChoice.GetStringSelection() != 'None':
+            try:
+                # don't re-connect a controller which is already selected
+                if self.controllerChoice.GetStringSelection() != self.currentController:
+                    self.controller = controllerInterface.controller()
+                    self.controller.setControllerIndex( self.controllerChoice.GetSelection()-1 )
+                    self.currentController = self.controllerChoice.GetStringSelection()
+                          
+            except:
+                wx.MessageBox('Unknown problem occurred while establishing connection with the chosen controller!', 'Error', 
+                          wx.OK | wx.ICON_ERROR)
+                self.controller = 0
+                self.currentController = 'None'
+                self.updateControllers()
+        
+        # if None is chosen then close the current port
+        else:
+            self.controller = 0
+            self.currentController = 'None'
 
     def newSliderValue(self,event):
         """ temp function """
@@ -266,6 +301,32 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         
     #=================================
     # non-event funtion declarations
+        
+    def updateControllers(self):
+        """ Check what controllers are now plugged in and refresh the available choices """
+         # check what controllers are currently connected
+        controllers = controllerInterface.getControllerNames()
+        
+        # save current selection
+        currentSelection = self.controllerChoice.GetStringSelection()
+        
+        # Remove the current options
+        for i in range(len(self.controllerChoice.GetStrings())-1,-1,-1):
+            self.controllerChoice.Delete(i)
+
+        # add the newly found controllers
+        self.controllerChoice.Append('None')
+        for controller in controllers:
+            self.controllerChoice.Append(controller)
+            
+        # attempt to return to the last selected controller, use None if it's not found
+        if currentSelection in controllers:
+            for i in range(len(controllers)):
+                if controllers[i] == currentSelection:
+                    self.controllerChoice.SetSelection(i+1)
+        else:
+            self.controllerChoice.SetSelection(0)
+            self.currentController = 'None'
     
     def updatePorts(self):
         """ Checks the list of open serial ports and updates the internal list
@@ -293,7 +354,7 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
                     self.portChoice.SetSelection(i+1)
         else:
             self.portChoice.SetSelection(0)
-            self.currentSelection = 'None'
+            self.currentPort = 'None'
         
     def checkConnection( self ):
         """ Checks if the Arduino is still connected. """
@@ -386,6 +447,17 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
                     
     def updateControlInputs(self):
         """ sends the control inputs to Arduino """
+        # read the control variables
+        if self.controller:
+            self.controller.parseEvents()
+            
+            # TODO need to work out how to map raw controller inputs into actual values
+            self.controlParameters['motorPortVer'] = self.controller.axesValues['lhsStickYaxis']*100.
+            self.controlParameters['motorStbdVer'] = self.controller.axesValues['rhsStickYaxis']*100.
+            self.controlParameters['motorPortHor'] = self.controller.axesValues['lhsStickXaxis']*100.
+            self.controlParameters['motorStbdHor'] = self.controller.axesValues['rhsStickXaxis']*100.
+#            print self.controller.axesValues.values(), self.controller.buttonValues.values()
+        
         if self.portOpen:
             # make sure the connection has not been broken
             if self.checkConnection():
@@ -439,44 +511,3 @@ if __name__ == "__main__":
     # start the app
     app = rovGuiApp()
     app.MainLoop()
-
-""" THIS PIECE OF CODE GETS KEYBOARD INPUTS
-
-btn = wx.Button(panel, label="OK")
-    
-        btn.Bind(wx.EVT_KEY_DOWN, self.onKeyPress)
-    
-    def onKeyPress(self, event):
-        keycode = event.GetKeyCode()
-        print "Keycode: {}".format(keycode)
-        
-        if event.ShiftDown():
-            print "Shift is down!"
-            
-        if event.AltDown():
-            print "Alt is down!"
-
-        if event.CmdDown():
-            print "Command is down!"
-
-        if event.ControlDown():
-            print "Control is down!"
-
-        if keycode==wx.WXK_SPACE:
-            print "space"
-        elif keycode==wx.WXK_LEFT or keycode==wx.WXK_NUMPAD_LEFT:
-            print "left"
-        elif keycode==wx.WXK_RIGHT or keycode==wx.WXK_NUMPAD_RIGHT:
-            print "right"
-        elif keycode==wx.WXK_UP or keycode==wx.WXK_NUMPAD_UP:
-            print "up"
-        elif keycode==wx.WXK_DOWN or keycode==wx.WXK_NUMPAD_DOWN:
-            print "down"
-        elif keycode==wx.WXK_PAGEUP or keycode==wx.WXK_NUMPAD_PAGEUP:
-            print "page up"
-        elif keycode==wx.WXK_PAGEDOWN or keycode==wx.WXK_NUMPAD_PAGEDOWN:
-            print "page down"
-
-        event.Skip()
-
-"""
