@@ -96,7 +96,7 @@ class mainFrame ( wx.Frame ):
 		
 		self.portChoiceLabel = wx.StaticText( self.controls, wx.ID_ANY, u"Serial port:", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.portChoiceLabel.Wrap( -1 )
-		portChoiceDropdownHorSizer.Add( self.portChoiceLabel, 1, wx.ALL|wx.EXPAND, 5 )
+		portChoiceDropdownHorSizer.Add( self.portChoiceLabel, 0, wx.ALL|wx.EXPAND, 5 )
 		
 		
 		portChoiceDropdownHorSizer.AddSpacer( ( 0, 0), 1, wx.EXPAND, 5 )
@@ -152,7 +152,10 @@ class mainFrame ( wx.Frame ):
 		
 		self.controllerChoiceLabel = wx.StaticText( self.controls, wx.ID_ANY, u"Controller:", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.controllerChoiceLabel.Wrap( -1 )
-		controllerChoiceHorSizer.Add( self.controllerChoiceLabel, 1, wx.ALL|wx.EXPAND, 5 )
+		controllerChoiceHorSizer.Add( self.controllerChoiceLabel, 0, wx.ALL|wx.EXPAND, 5 )
+		
+		
+		controllerChoiceHorSizer.AddSpacer( ( 0, 0), 1, wx.EXPAND, 5 )
 		
 		controllerChoiceChoices = []
 		self.controllerChoice = wx.Choice( self.controls, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, controllerChoiceChoices, 0 )
@@ -175,9 +178,6 @@ class mainFrame ( wx.Frame ):
 		
 		self.armModules = wx.Button( self.controls, wx.ID_ANY, u"Arm modules", wx.DefaultPosition, wx.DefaultSize, 0 )
 		controlsSizerVert.Add( self.armModules, 1, wx.ALL|wx.EXPAND, 5 )
-		
-		self.tempSlider = wx.Slider( self.controls, wx.ID_ANY, 0, -100, 100, wx.DefaultPosition, wx.DefaultSize, wx.SL_HORIZONTAL )
-		controlsSizerVert.Add( self.tempSlider, 0, wx.ALL|wx.EXPAND, 5 )
 		
 		
 		self.controls.SetSizer( controlsSizerVert )
@@ -235,7 +235,6 @@ class mainFrame ( wx.Frame ):
 		self.controllerChoice.Bind( wx.EVT_CHOICE, self.onChoseController )
 		self.updateControllersButton.Bind( wx.EVT_BUTTON, self.onUpdateControllers )
 		self.armModules.Bind( wx.EVT_BUTTON, self.onArmModules )
-		self.tempSlider.Bind( wx.EVT_SCROLL, self.newSliderValue )
 		self.Bind( wx.EVT_TIMER, self.onUpdateFrame, id=frameTimerID )
 		self.Bind( wx.EVT_TIMER, self.onUpdateControlInputs, id=controlInputTimerID )
 		self.Bind( wx.EVT_TIMER, self.onUpdateSensorReadings, id=sensorReadingsTimerID )
@@ -268,9 +267,6 @@ class mainFrame ( wx.Frame ):
 		event.Skip()
 	
 	def onArmModules( self, event ):
-		event.Skip()
-	
-	def newSliderValue( self, event ):
 		event.Skip()
 	
 	def onUpdateFrame( self, event ):

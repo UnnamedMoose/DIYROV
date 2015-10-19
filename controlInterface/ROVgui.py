@@ -216,6 +216,7 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
     def onUpdatePorts( self, event ):
         # call the update ports method - need a wrapper to be able to call it during initialisation
         self.updatePorts()
+        self.Layout() # makes sure the choice dropdown is big enough to fit all the choice options
     
     def onChoseCameraIndex( self, event ):
         """ Update the camera index selection """
@@ -272,6 +273,7 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
     def onUpdateControllers(self,event):
         """ update the list of choices for available controllers """
         self.updateControllers()
+        self.Layout() # makes sure the choice dropdown is big enough to fit all the choice options
     
     def onChoseController(self,event):
         """ set the newly chosen controller """
@@ -296,12 +298,6 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
             self.controller = 0
             self.currentController = 'None'
 
-    def newSliderValue(self,event):
-        """ temp function """
-        # TODO remove when no longer needed
-        self.controlParameters['motorPortHor'] = self.tempSlider.GetValue()
-        print self.controlParameters['motorPortHor']
-        
     #=================================
     # non-event funtion declarations
         
@@ -410,7 +406,6 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         
         except AttributeError:
             self.feedOn = False
-            
             wx.MessageBox('Could not start video feed!', 'Error', wx.OK | wx.ICON_ERROR)
     
     def getNewFrame(self):
