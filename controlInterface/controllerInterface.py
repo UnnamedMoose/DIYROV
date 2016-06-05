@@ -138,12 +138,6 @@ class controller(object):
                 self.hatX = event.value[0]
                 self.hatY = event.value[1]
 
-"""
-cont = controller()
-cont.setControllerIndex(0)
-cont.parseEvents()
-
-   
 def main():
     "Opens a window and prints events to the terminal. Closes on ESC or QUIT."
     pygame.init()
@@ -193,5 +187,7 @@ def main():
 
 
 if __name__ == "__main__":
-        main()
-""" 
+    cont = controller()
+    cont.setControllerIndex(0)
+    cont.parseEvents()
+    main()
