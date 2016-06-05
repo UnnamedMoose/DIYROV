@@ -16,6 +16,7 @@ from wx.lib import statbmp
 import cv2
 import os
 import serial
+import numpy as np
 
 class IntValidator(wx.PyValidator):
     """ Validates data as it is entered into the text controls. """
@@ -105,11 +106,12 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         self.freqArduino = 100 # default refresh rate for the Arduino in Hz
         
         # video feed
-        self.freqVideo = 5 # frame rate update frquency
+        self.freqVideo = 15 # frame rate update frquency
         self.HUDcolour = (0,255,0) # RGB colour of the overlay on the HUD
         self.feedOn = False # switch indicating whether the video feed is on or off
         self.cameraIndex = 1 # index of the potential candidates for OpenCV capture object to actually use
         self.cameraCapture = 0 # this will hold the OpenCV VideocameraCapture object once it gets initialised
+        self.frameSize = (640,480) # approximate width and height of the camera
         
         # serial communication
         self.portOpen = False # indicates if the serial communication port is open
@@ -121,9 +123,13 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         # controller
         self.controller = 0
         self.currentController = 'None'
+        self.upperRpmLimit = 50.0 # limit rpm of the motors to avoid overloading
+        self.deadZone = 0.05 # extent of raw input which gets treated like zero
+        self.lowerRpmLimit = 20 # lower value of output to arduino
+        self.zeroRpmValue = 10 # arduino doesn't appear to like an actual 0, foold it by giving a small output
         
         # create the internal bitmap object by using an empty bitmap, this will be projected onto the panel
-        self.bmp = wx.EmptyBitmap(400,300)
+        self.bmp = wx.EmptyBitmap(self.frameSize[0],self.frameSize[1])
         self.videoFeed = statbmp.GenStaticBitmap(self.videoFeedPanel, wx.ID_ANY,self.bmp)
         
         # add to the panel and resize to fit everything
@@ -158,7 +164,7 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
             'motorPortHor':0,
             'motorStbdVer':0,
             'motorStbdHor':0,
-            'forwardLED':False, # forward illumination LED on/off [True,False]
+            'forwardLED':0, # forward illumination LED on/off [True,False]
             }
         
         # names and values of sensor readings
@@ -236,15 +242,18 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
     
     def onUpdateFrame(self,event):
         """ call the frame update when timer is activated """
+#        print "updateFrame"
         self.getNewFrame()
     
     def onUpdateControlInputs(self,event):
         """ Send the control data to Arduino to set rps etc. """
+#        print "updateControlInputs"
         self.updateControlInputs()
     
     def onUpdateSensorReadings(self,event):
         """ Send a request for new sensor data to Arduino, read it from serial and
         update the displays, plots, etc. """
+#        print "updateSensorReadings"
         self.updateSensorReadings()
     
     def onArmModules(self,eent):
@@ -387,6 +396,8 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         try:
             # create a cameraCapture object using OpenCV
             self.cameraCapture = cv2.VideoCapture(self.cameraIndex)
+            self.cameraCapture.set(3,self.frameSize[0]) # set the size of the capture
+            self.cameraCapture.set(4,self.frameSize[1])
 
             # get the current frame, convert colours and store
             ret, frame = self.cameraCapture.read()
@@ -452,12 +463,32 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
             self.controller.parseEvents()
             
             # TODO need to work out how to map raw controller inputs into actual values
-            self.controlParameters['motorPortVer'] = self.controller.axesValues['lhsStickYaxis']*100.
-            self.controlParameters['motorStbdVer'] = self.controller.axesValues['rhsStickYaxis']*100.
-            self.controlParameters['motorPortHor'] = self.controller.axesValues['lhsStickXaxis']*100.
-            self.controlParameters['motorStbdHor'] = self.controller.axesValues['rhsStickXaxis']*100.
-#            print self.controller.axesValues.values(), self.controller.buttonValues.values()
-        
+            def mapMotorInputs(throttleDemand):
+                """ Accepts raw values between -1 and 1, scale and bound them to suit the arduino side """
+                
+                if np.abs(throttleDemand) < self.deadZone:
+                    controlParameter = self.zeroRpmValue # actual demand sent to arduino
+                    thrustReading = 0. # for displaying throttle on dials
+                
+                else:
+                    controlParameter = int(np.sign(throttleDemand)*((self.upperRpmLimit-self.lowerRpmLimit)/(1.0-self.deadZone)*(np.abs(throttleDemand)-self.deadZone) + self.lowerRpmLimit))
+                    thrustReading = np.sign(controlParameter)*(np.abs(controlParameter)-self.lowerRpmLimit)/(self.upperRpmLimit-self.lowerRpmLimit)*100.
+
+                return controlParameter,thrustReading
+            
+            # set the arduino demands for motor rpm and update dial values
+            self.controlParameters['motorPortVer'],self.throttleDial_portVer.currentThrottle = \
+                    mapMotorInputs(self.controller.axesValues['lhsStickYaxis'])
+            self.controlParameters['motorStbdVer'],self.throttleDial_stbdVer.currentThrottle = \
+                    mapMotorInputs(self.controller.axesValues['rhsStickYaxis'])
+            self.controlParameters['motorPortHor'],self.throttleDial_portHor.currentThrottle = \
+                    mapMotorInputs(self.controller.axesValues['lhsStickXaxis'])
+            self.controlParameters['motorStbdHor'],self.throttleDial_stbdHor.currentThrottle = \
+                    mapMotorInputs(self.controller.axesValues['rhsStickXaxis'])
+                    
+            # set forward LED
+            self.controlParameters['forwardLED'] = int(self.controller.buttonValues['butB'])
+                    
         if self.portOpen:
             # make sure the connection has not been broken
             if self.checkConnection():
@@ -465,13 +496,9 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
                 communicationProtocol.sendMessage(self.arduinoSerialConnection,self.controlParameters)
                 
         # update the display of engine throttles
-        self.throttleDial_portVer.currentThrottle = self.controlParameters['motorPortVer']
         self.throttleDial_portVer.Refresh()
-        self.throttleDial_portHor.currentThrottle = self.controlParameters['motorPortHor']
         self.throttleDial_portHor.Refresh()
-        self.throttleDial_stbdVer.currentThrottle = self.controlParameters['motorStbdVer']
         self.throttleDial_stbdVer.Refresh()
-        self.throttleDial_stbdHor.currentThrottle = self.controlParameters['motorStbdHor']
         self.throttleDial_stbdHor.Refresh()
     
     def updateSensorReadings(self):
