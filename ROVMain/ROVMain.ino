@@ -20,7 +20,7 @@
  * 26 Sep 2015 - 2.1.2 - Alek Lidtke - put arming modules into a dedicated function to not freeze the GUI when doing so.
  */
 
-//#define DEBUG_PRINTOUT
+//#define DEBUG_PRINTOUT // this will cause issues with arming modules as the GUI expects a delay in ms to be returned upon sending "armModules,1"; either fix or don't use the GUI in conjuction with this flag
 
 // Custom includes.
 #include "Module.h"
@@ -56,13 +56,13 @@ void armModules(void);
 
 // Pins are pairs of close-by pins with PWM and digital ones.
 BrushlessDCMotor engine1 = BrushlessDCMotor("motorPortHor", THROTTLE_STEPS, MOTOR_MAX_PULSE_WIDTH,
-	MOTOR_MIN_PULSE_WIDTH, MOTOR_ARM_PULSE_WIDTH, 9, 8);
+	MOTOR_MIN_PULSE_WIDTH, MOTOR_ARM_PULSE_WIDTH, 3, 2); // orange // 1st-pwm, 2nd-digital
 BrushlessDCMotor engine2 = BrushlessDCMotor("motorStbdHor", THROTTLE_STEPS, MOTOR_MAX_PULSE_WIDTH,
-	MOTOR_MIN_PULSE_WIDTH, MOTOR_ARM_PULSE_WIDTH, 6, 7);
+	MOTOR_MIN_PULSE_WIDTH, MOTOR_ARM_PULSE_WIDTH, 5, 4); // green
 BrushlessDCMotor engine3 = BrushlessDCMotor("motorPortVer", THROTTLE_STEPS,MOTOR_MAX_PULSE_WIDTH,
-	MOTOR_MIN_PULSE_WIDTH, MOTOR_ARM_PULSE_WIDTH, 5, 4);
+	MOTOR_MIN_PULSE_WIDTH, MOTOR_ARM_PULSE_WIDTH, 6, 7); // white
 BrushlessDCMotor engine4 = BrushlessDCMotor("motorStbdVer", THROTTLE_STEPS, MOTOR_MAX_PULSE_WIDTH,
-	MOTOR_MIN_PULSE_WIDTH, MOTOR_ARM_PULSE_WIDTH, 3, 2);
+	MOTOR_MIN_PULSE_WIDTH, MOTOR_ARM_PULSE_WIDTH, 9, 8); // blue
 
 /* =============================================================================
  * MISC ACTUATOR AND COMMAND DEFINITIONS.
@@ -91,7 +91,7 @@ DepthSensor depthSensor2 = DepthSensor("depthReading2",16); // Another mock sens
  * =============================================================================
  */
 // Input and output data buffers.
-#define DATABUFFERSIZE 80
+#define DATABUFFERSIZE 180
 char inputDataBuffer[DATABUFFERSIZE+1]; // Where the received command will be temporarily held. Add 1 for NULL terminator at the end.
 String outputDataBuffer = ""; // We'll store a message here before sending it.
 
@@ -112,7 +112,12 @@ void setup(void)
 /* Prepare to listen to commands over serial and start everything up. */
 {
 	armModulesModule.setValue(0); // Don't arm the modules by default, wait for a command.
-	refreshRate.setValue(10); // Set default delay in milliseconds in the main loop/
+	refreshRate.setValue(10); // Set default delay in milliseconds in the main loop
+	forwardLED.setValue(0);
+	
+	// set modes for pins used by simple switch modules
+	pinMode(ON_LED_PIN, OUTPUT);
+	pinMode(FORWARD_LED_PIN, OUTPUT);
 
 	//TODO: do some system checks, like battery level, connections etc.
 
@@ -141,6 +146,16 @@ void loop(void)
 	{
 		armModules(); // This function handles everything.
 		armModulesModule.setValue(0); // We're done arming now.
+	}
+	
+	// LED switch
+	if (forwardLED.getValue() == 1)
+	{
+		digitalWrite(FORWARD_LED_PIN, HIGH);
+	}
+	else
+	{
+		digitalWrite(FORWARD_LED_PIN, LOW);
 	}
 	
 	// Send readings from all the sensors over serial after this has been requested by a command.
@@ -211,14 +226,13 @@ void parseInput(void)
 {
   // Get the first data token.
   char * token;
-  token = strtok (inputDataBuffer, DATA_DELIMITER);
+  token = strtok(inputDataBuffer, DATA_DELIMITER);
   
   // Parse the entire inputDataBuffer of tokens (commands and their value arguments).
   int nextActuatorIndex = -1; // Index of the actuator value for which is sent in this part of the telecommand.
   
   while (token != NULL)
   {
-  
   	// If next actuator index < 0 we have no value to read now
   	if (nextActuatorIndex >= 0)
   	{
@@ -247,7 +261,7 @@ void parseInput(void)
 	}
         
 	// Continue to the new token.
-	token = strtok (NULL, DATA_DELIMITER);
+	token = strtok(NULL, DATA_DELIMITER);
   }
 }
 
