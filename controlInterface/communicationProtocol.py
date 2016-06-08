@@ -53,8 +53,8 @@ def sendMessage(serialConnection,keywords):
     """
     msg = OUTPUT_START_CHAR
     for key in keywords:
-        msg += '{}{}{}'.format(key, DATA_DELIMITER, keywords[key])
-    msg += MESSAGE_END_CHAR
+        msg += '{}{}{}{}'.format(key, DATA_DELIMITER, keywords[key], DATA_DELIMITER)
+    msg = msg.rstrip(DATA_DELIMITER) + MESSAGE_END_CHAR # oerwrite the last date delimiter with end char
     serialConnection.write(msg)
 
 def readMessage(s):

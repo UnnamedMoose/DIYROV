@@ -10,6 +10,11 @@
 import wx
 import wx.xrc
 
+frameTimerID = 1000
+controlInputTimerID = 1001
+sensorReadingsTimerID = 1002
+armTimerID = 1003
+
 ###########################################################################
 ## Class mainFrame
 ###########################################################################
@@ -87,11 +92,6 @@ class mainFrame ( wx.Frame ):
 		self.controls = wx.Panel( self.cotrolPanel, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		controlsSizerVert = wx.BoxSizer( wx.VERTICAL )
 		
-		portChoiceVertSizer = wx.BoxSizer( wx.VERTICAL )
-		
-		
-		portChoiceVertSizer.AddSpacer( ( 0, 0), 1, wx.EXPAND, 5 )
-		
 		portChoiceDropdownHorSizer = wx.BoxSizer( wx.HORIZONTAL )
 		
 		self.portChoiceLabel = wx.StaticText( self.controls, wx.ID_ANY, u"Serial port:", wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -107,7 +107,7 @@ class mainFrame ( wx.Frame ):
 		portChoiceDropdownHorSizer.Add( self.portChoice, 0, wx.ALIGN_BOTTOM|wx.ALIGN_RIGHT|wx.ALL|wx.EXPAND, 5 )
 		
 		
-		portChoiceVertSizer.Add( portChoiceDropdownHorSizer, 1, wx.EXPAND, 5 )
+		controlsSizerVert.Add( portChoiceDropdownHorSizer, 1, wx.EXPAND, 5 )
 		
 		portChoiceButtonHorSizer = wx.BoxSizer( wx.HORIZONTAL )
 		
@@ -118,21 +118,13 @@ class mainFrame ( wx.Frame ):
 		portChoiceButtonHorSizer.Add( self.updatePortsButton, 0, wx.ALL|wx.EXPAND, 5 )
 		
 		
-		portChoiceVertSizer.Add( portChoiceButtonHorSizer, 1, wx.EXPAND, 5 )
-		
-		
-		controlsSizerVert.Add( portChoiceVertSizer, 1, wx.EXPAND, 5 )
-		
-		cameraChoiceVertSizer = wx.BoxSizer( wx.VERTICAL )
-		
-		
-		cameraChoiceVertSizer.AddSpacer( ( 0, 0), 1, wx.EXPAND, 5 )
+		controlsSizerVert.Add( portChoiceButtonHorSizer, 1, wx.EXPAND, 5 )
 		
 		cameraChoiceDropdownHorSizer = wx.BoxSizer( wx.HORIZONTAL )
 		
 		self.cameraChoiceLabel = wx.StaticText( self.controls, wx.ID_ANY, u"Camera index:", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.cameraChoiceLabel.Wrap( -1 )
-		cameraChoiceDropdownHorSizer.Add( self.cameraChoiceLabel, 0, wx.ALL|wx.EXPAND, 5 )
+		cameraChoiceDropdownHorSizer.Add( self.cameraChoiceLabel, 1, wx.ALL|wx.EXPAND, 5 )
 		
 		
 		cameraChoiceDropdownHorSizer.AddSpacer( ( 0, 0), 1, wx.EXPAND, 5 )
@@ -143,7 +135,7 @@ class mainFrame ( wx.Frame ):
 		cameraChoiceDropdownHorSizer.Add( self.cameraChoice, 0, wx.ALIGN_BOTTOM|wx.ALIGN_RIGHT|wx.ALL|wx.EXPAND, 5 )
 		
 		
-		cameraChoiceVertSizer.Add( cameraChoiceDropdownHorSizer, 1, wx.EXPAND, 5 )
+		controlsSizerVert.Add( cameraChoiceDropdownHorSizer, 1, wx.EXPAND, 5 )
 		
 		cameraChoiceButtonHorSizer = wx.BoxSizer( wx.HORIZONTAL )
 		
@@ -154,10 +146,38 @@ class mainFrame ( wx.Frame ):
 		cameraChoiceButtonHorSizer.Add( self.cameraReconnectButton, 0, wx.ALL|wx.EXPAND, 5 )
 		
 		
-		cameraChoiceVertSizer.Add( cameraChoiceButtonHorSizer, 1, wx.EXPAND, 5 )
+		controlsSizerVert.Add( cameraChoiceButtonHorSizer, 1, wx.EXPAND, 5 )
+		
+		controllerChoiceHorSizer = wx.BoxSizer( wx.HORIZONTAL )
+		
+		self.controllerChoiceLabel = wx.StaticText( self.controls, wx.ID_ANY, u"Controller:", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.controllerChoiceLabel.Wrap( -1 )
+		controllerChoiceHorSizer.Add( self.controllerChoiceLabel, 0, wx.ALL|wx.EXPAND, 5 )
 		
 		
-		controlsSizerVert.Add( cameraChoiceVertSizer, 1, wx.EXPAND, 5 )
+		controllerChoiceHorSizer.AddSpacer( ( 0, 0), 1, wx.EXPAND, 5 )
+		
+		controllerChoiceChoices = []
+		self.controllerChoice = wx.Choice( self.controls, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, controllerChoiceChoices, 0 )
+		self.controllerChoice.SetSelection( 0 )
+		controllerChoiceHorSizer.Add( self.controllerChoice, 0, wx.ALL|wx.EXPAND, 5 )
+		
+		
+		controlsSizerVert.Add( controllerChoiceHorSizer, 1, wx.EXPAND, 5 )
+		
+		controllerChoiceButtonHorSizer = wx.BoxSizer( wx.HORIZONTAL )
+		
+		
+		controllerChoiceButtonHorSizer.AddSpacer( ( 0, 0), 1, wx.EXPAND, 5 )
+		
+		self.updateControllersButton = wx.Button( self.controls, wx.ID_ANY, u"Update controllers", wx.DefaultPosition, wx.DefaultSize, 0 )
+		controllerChoiceButtonHorSizer.Add( self.updateControllersButton, 0, wx.ALL|wx.EXPAND, 5 )
+		
+		
+		controlsSizerVert.Add( controllerChoiceButtonHorSizer, 1, wx.EXPAND, 5 )
+		
+		self.armModules = wx.Button( self.controls, wx.ID_ANY, u"Arm modules", wx.DefaultPosition, wx.DefaultSize, 0 )
+		controlsSizerVert.Add( self.armModules, 1, wx.ALL|wx.EXPAND, 5 )
 		
 		
 		self.controls.SetSizer( controlsSizerVert )
@@ -189,11 +209,20 @@ class mainFrame ( wx.Frame ):
 		self.SetSizer( mainHorSizer )
 		self.Layout()
 		self.frameTimer = wx.Timer()
-		self.frameTimer.SetOwner( self, wx.ID_ANY )
+		self.frameTimer.SetOwner( self, frameTimerID )
 		self.controlInputTimer = wx.Timer()
-		self.controlInputTimer.SetOwner( self, wx.ID_ANY )
+		self.controlInputTimer.SetOwner( self, controlInputTimerID )
 		self.sensorReadingsTimer = wx.Timer()
-		self.sensorReadingsTimer.SetOwner( self, wx.ID_ANY )
+		self.sensorReadingsTimer.SetOwner( self, sensorReadingsTimerID )
+		self.mainMenuBar = wx.MenuBar( 0 )
+		self.settingsMenu = wx.Menu()
+		self.communicationsSettings  = wx.MenuItem( self.settingsMenu, wx.ID_ANY, u"Communications settings", wx.EmptyString, wx.ITEM_NORMAL )
+		self.settingsMenu.AppendItem( self.communicationsSettings  )
+		
+		self.mainMenuBar.Append( self.settingsMenu, u"Settings" ) 
+		
+		self.SetMenuBar( self.mainMenuBar )
+		
 		
 		self.Centre( wx.BOTH )
 		
@@ -203,9 +232,13 @@ class mainFrame ( wx.Frame ):
 		self.updatePortsButton.Bind( wx.EVT_BUTTON, self.onUpdatePorts )
 		self.cameraChoice.Bind( wx.EVT_CHOICE, self.onChoseCameraIndex )
 		self.cameraReconnectButton.Bind( wx.EVT_BUTTON, self.onReconnectVideoFeed )
-		self.Bind( wx.EVT_TIMER, self.onUpdateFrame, id=wx.ID_ANY )
-		self.Bind( wx.EVT_TIMER, self.onUpdateControlInputs, id=wx.ID_ANY )
-		self.Bind( wx.EVT_TIMER, self.onUpdateSensorReadings, id=wx.ID_ANY )
+		self.controllerChoice.Bind( wx.EVT_CHOICE, self.onChoseController )
+		self.updateControllersButton.Bind( wx.EVT_BUTTON, self.onUpdateControllers )
+		self.armModules.Bind( wx.EVT_BUTTON, self.onArmModules )
+		self.Bind( wx.EVT_TIMER, self.onUpdateFrame, id=frameTimerID )
+		self.Bind( wx.EVT_TIMER, self.onUpdateControlInputs, id=controlInputTimerID )
+		self.Bind( wx.EVT_TIMER, self.onUpdateSensorReadings, id=sensorReadingsTimerID )
+		self.Bind( wx.EVT_MENU, self.onCommunicationsSettings, id = self.communicationsSettings .GetId() )
 	
 	def __del__( self ):
 		pass
@@ -227,6 +260,15 @@ class mainFrame ( wx.Frame ):
 	def onReconnectVideoFeed( self, event ):
 		event.Skip()
 	
+	def onChoseController( self, event ):
+		event.Skip()
+	
+	def onUpdateControllers( self, event ):
+		event.Skip()
+	
+	def onArmModules( self, event ):
+		event.Skip()
+	
 	def onUpdateFrame( self, event ):
 		event.Skip()
 	
@@ -234,6 +276,138 @@ class mainFrame ( wx.Frame ):
 		event.Skip()
 	
 	def onUpdateSensorReadings( self, event ):
+		event.Skip()
+	
+	def onCommunicationsSettings( self, event ):
+		event.Skip()
+	
+
+###########################################################################
+## Class armDialog
+###########################################################################
+
+class armDialog ( wx.Dialog ):
+	
+	def __init__( self, parent ):
+		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = wx.EmptyString, pos = wx.DefaultPosition, size = wx.Size( 300,150 ), style = wx.DEFAULT_DIALOG_STYLE )
+		
+		self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
+		
+		armDialogSizer = wx.BoxSizer( wx.VERTICAL )
+		
+		self.armText = wx.StaticText( self, wx.ID_ANY, u"Arming modules, please wait ...", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.armText.Wrap( -1 )
+		armDialogSizer.Add( self.armText, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 5 )
+		
+		
+		self.SetSizer( armDialogSizer )
+		self.Layout()
+		self.armTimer = wx.Timer()
+		self.armTimer.SetOwner( self, armTimerID )
+		
+		self.Centre( wx.BOTH )
+		
+		# Connect Events
+		self.Bind( wx.EVT_TIMER, self.onClose, id=armTimerID )
+	
+	def __del__( self ):
+		pass
+	
+	
+	# Virtual event handlers, overide them in your derived class
+	def onClose( self, event ):
+		event.Skip()
+	
+
+###########################################################################
+## Class communicationsSettingsDialog
+###########################################################################
+
+class communicationsSettingsDialog ( wx.Dialog ):
+	
+	def __init__( self, parent ):
+		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"Communications settings", pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_DIALOG_STYLE )
+		
+		self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
+		
+		bSizer15 = wx.BoxSizer( wx.VERTICAL )
+		
+		bSizer19 = wx.BoxSizer( wx.HORIZONTAL )
+		
+		self.m_staticText4 = wx.StaticText( self, wx.ID_ANY, u"Arduino loop frequency [Hz]", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText4.Wrap( -1 )
+		bSizer19.Add( self.m_staticText4, 1, wx.ALL, 5 )
+		
+		self.arduinoLoopFreqTextControl = wx.TextCtrl( self, wx.ID_ANY, u"0", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer19.Add( self.arduinoLoopFreqTextControl, 0, wx.ALL, 5 )
+		
+		
+		bSizer15.Add( bSizer19, 1, wx.EXPAND, 5 )
+		
+		bSizer191 = wx.BoxSizer( wx.HORIZONTAL )
+		
+		self.m_staticText41 = wx.StaticText( self, wx.ID_ANY, u"Video frame rate [Hz]", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText41.Wrap( -1 )
+		bSizer191.Add( self.m_staticText41, 1, wx.ALL, 5 )
+		
+		self.videoFrameFreqTextControl = wx.TextCtrl( self, wx.ID_ANY, u"0", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer191.Add( self.videoFrameFreqTextControl, 0, wx.ALL, 5 )
+		
+		
+		bSizer15.Add( bSizer191, 1, wx.EXPAND, 5 )
+		
+		bSizer192 = wx.BoxSizer( wx.HORIZONTAL )
+		
+		self.m_staticText42 = wx.StaticText( self, wx.ID_ANY, u"Control inputs fequency [Hz]", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText42.Wrap( -1 )
+		bSizer192.Add( self.m_staticText42, 1, wx.ALL, 5 )
+		
+		self.controlInputsFreqTextControl = wx.TextCtrl( self, wx.ID_ANY, u"0", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer192.Add( self.controlInputsFreqTextControl, 0, wx.ALL, 5 )
+		
+		
+		bSizer15.Add( bSizer192, 1, wx.EXPAND, 5 )
+		
+		bSizer193 = wx.BoxSizer( wx.HORIZONTAL )
+		
+		self.m_staticText43 = wx.StaticText( self, wx.ID_ANY, u"Sensor readings frequency [Hz]", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText43.Wrap( -1 )
+		bSizer193.Add( self.m_staticText43, 1, wx.ALL, 5 )
+		
+		self.sensorReadingsFreqTextControl = wx.TextCtrl( self, wx.ID_ANY, u"0", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer193.Add( self.sensorReadingsFreqTextControl, 0, wx.ALL, 5 )
+		
+		
+		bSizer15.Add( bSizer193, 1, wx.EXPAND, 5 )
+		
+		
+		self.SetSizer( bSizer15 )
+		self.Layout()
+		bSizer15.Fit( self )
+		
+		self.Centre( wx.BOTH )
+		
+		# Connect Events
+		self.arduinoLoopFreqTextControl.Bind( wx.EVT_TEXT, self.setArduinoFreq )
+		self.videoFrameFreqTextControl.Bind( wx.EVT_TEXT, self.setVideoFreq )
+		self.controlInputsFreqTextControl.Bind( wx.EVT_TEXT, self.setControlFreq )
+		self.sensorReadingsFreqTextControl.Bind( wx.EVT_TEXT, self.setSensorsFreq )
+	
+	def __del__( self ):
+		pass
+	
+	
+	# Virtual event handlers, overide them in your derived class
+	def setArduinoFreq( self, event ):
+		event.Skip()
+	
+	def setVideoFreq( self, event ):
+		event.Skip()
+	
+	def setControlFreq( self, event ):
+		event.Skip()
+	
+	def setSensorsFreq( self, event ):
 		event.Skip()
 	
 

@@ -1,6 +1,6 @@
-build-uno/userlibs/BrushlessDCMotor/BrushlessDCMotor.o: \
- /usr/share/arduino/libraries//BrushlessDCMotor/BrushlessDCMotor.cpp \
- /usr/share/arduino/libraries//BrushlessDCMotor/BrushlessDCMotor.h \
+build-uno/userlibs/Module/Module.o: \
+ /usr/share/arduino/libraries//Module/Module.cpp \
+ /usr/share/arduino/libraries//Module/Module.h \
  /usr/share/arduino/hardware/arduino//cores/arduino/Arduino.h \
  /usr/share/arduino/hardware/arduino//cores/arduino/binary.h \
  /usr/share/arduino/hardware/arduino//cores/arduino/WCharacter.h \
@@ -10,6 +10,4 @@ build-uno/userlibs/BrushlessDCMotor/BrushlessDCMotor.o: \
  /usr/share/arduino/hardware/arduino//cores/arduino/Print.h \
  /usr/share/arduino/hardware/arduino//cores/arduino/Printable.h \
  /usr/share/arduino/hardware/arduino//cores/arduino/new.h \
- /usr/share/arduino/hardware/arduino//variants/standard/pins_arduino.h \
- /usr/share/arduino/libraries//Module/Module.h \
- /usr/share/arduino/libraries//Servo/Servo.h
+ /usr/share/arduino/hardware/arduino//variants/standard/pins_arduino.h
