@@ -9,18 +9,17 @@
  * @author: Aleksander Lidtke
  * @email: alekasdner.lidtke@gmail.com
  * @url: www.aleksanderlidtke.com
- * @since: 26 Sep 2015
+ * @since: 5 Sep 2015
  * @version: 2.1.2
- * 
- * CHANGELOG
- *  5 Sep 2015 - 1.0.0 - Alek Lidtke - released the first version.
- *  6 Sep 2015 - 2.0.0 - Alek & Artur Lidtke - derived motor class from the Module class.
- * 24 Sep 2015 - 2.1.0 - Alek Lidtke - added command handling via dummy Modules.
- * 				 2.1.1 - Alek Lidtke - added ROV identifying strings.
- * 26 Sep 2015 - 2.1.2 - Alek Lidtke - put arming modules into a dedicated function to not freeze the GUI when doing so.
  */
 
 //#define DEBUG_PRINTOUT // this will cause issues with arming modules as the GUI expects a delay in ms to be returned upon sending "armModules,1"; either fix or don't use the GUI in conjuction with this flag
+
+/* TODO TODO TODO
+- add a custom LED module to make things more tidy
+- add an option to arm motors independently
+- figure out which ESC sends alarm at arming (throttle not zero?) (port hor?)
+*/
 
 // Custom includes.
 #include "Module.h"
