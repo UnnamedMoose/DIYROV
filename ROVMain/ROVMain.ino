@@ -9,14 +9,13 @@
  * @author: Aleksander Lidtke
  * @email: alekasdner.lidtke@gmail.com
  * @url: www.aleksanderlidtke.com
- * @since: 5 Sep 2015
- * @version: 2.1.2
+ * @since: 10 Jul 2016
+ * @version: 2.2.0
  */
 
 //#define DEBUG_PRINTOUT // this will cause issues with arming modules as the GUI expects a delay in ms to be returned upon sending "armModules,1"; either fix or don't use the GUI in conjuction with this flag
 
 /* TODO TODO TODO
-- add a custom LED module to make things more tidy
 - figure out which ESC sends alarm at arming (throttle not zero?) (port hor?)
 */
 
@@ -25,6 +24,7 @@
 #include "BrushlessDCMotor.h"
 #include "DepthSensor.h"
 #include "Servo.h"
+#include "LEDModule.h"
 
 // Standard C/C++ includes
 #include <stdio.h>
@@ -74,8 +74,7 @@ Module sendSensorReadingsModule = Module("sendSensorReadings"); // Sends sensor 
 
 Module refreshRate = Module("refreshRate"); // Changes the delay in the main loop.
 
-Module forwardLED = Module("forwardLED"); // Switches the forward illumination LED on or of.
-const int FORWARD_LED_PIN = 12; // When this is set HIGH the forward light will switch on.
+LEDModule forwardLED = LEDModule("forwardLED", 12); // Switches the forward illumination LED, on pin 12, on or of.
 
 const int ON_LED_PIN = 13; // LED on the Arduino board that will be lit when the ROV is in the main loop.
 
@@ -114,11 +113,10 @@ void setup(void)
 	armModulesModule.setValue(0); // Don't arm the modules by default, wait for a command.
 	armActuatorModule.setValue(-1); // Will arm the actuator that's under the index of armActuatorModule value.
 	refreshRate.setValue(10); // Set default delay in milliseconds in the main loop
-	forwardLED.setValue(0);
+	forwardLED.setValue(0); // LEDs are off by default.
 	
 	// set modes for pins used by simple switch modules
 	pinMode(ON_LED_PIN, OUTPUT);
-	pinMode(FORWARD_LED_PIN, OUTPUT);
 
 	//TODO: do some system checks, like battery level, connections etc.
 
@@ -155,16 +153,6 @@ void loop(void)
 		// Arm whatever module the user wants.
 		armActuator(armActuatorModule.getValue())
 		armActuatorModule.setValue(-1); // Go back to default value.
-	}
-	
-	// LED switch
-	if (forwardLED.getValue() == 1)
-	{
-		digitalWrite(FORWARD_LED_PIN, HIGH);
-	}
-	else
-	{
-		digitalWrite(FORWARD_LED_PIN, LOW);
 	}
 	
 	// Send readings from all the sensors over serial after this has been requested by a command.
