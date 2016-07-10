@@ -17,6 +17,25 @@ import cv2
 import os
 import serial
 import numpy as np
+import thread, datetime
+from scipy import interpolate
+
+def savePhoto(img,directory):
+    """ Save a given photo into a file, the image nime will cointain the current
+    time to make sure nothing is overwritten. Intended to be used in a separate
+    thread.
+    
+    Arguments
+    ----------
+    img - output of cv2.VideoCapture.read.
+    directory - str with the directory where the photo will be writen.
+    
+    Example
+    ----------
+    thread.start_new_thread(savePhoto, (img,"./"))
+    """
+    outName=datetime.datetime.now().strftime("%Y%m%d_%H%M%S%f")+".jpg" # Time stamp the images.
+    cv2.imwrite(os.path.join(directory,outName), img)
 
 class IntValidator(wx.PyValidator):
     """ Validates data as it is entered into the text controls. """
@@ -112,6 +131,8 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         self.cameraIndex = 1 # index of the potential candidates for OpenCV capture object to actually use
         self.cameraCapture = 0 # this will hold the OpenCV VideocameraCapture object once it gets initialised
         self.frameSize = (640,480) # approximate width and height of the camera
+        self.videoDirectory="/home/artur/Desktop" # will save every captured frame into this directory.
+        #TODO add a dialgo to be able to change the videoDirectory
         
         # serial communication
         self.portOpen = False # indicates if the serial communication port is open
@@ -422,7 +443,7 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
     def getNewFrame(self):
         """ This gets called when the internal timer requests a new frame to be updated.
         The function cameraCaptures a new frame and sends it to the static bitmap inside
-        video feed panel """
+        video feed panel. It also saves the capture to a file into self.videoDirectory. """
 
         # see if the video feed is on
         if self.feedOn:
@@ -432,22 +453,25 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
             
             if ret:
                 # apply any colour filters, get the size of the frame
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                editedFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) # Keep the original image in RGB  to be able to save that one.
                 height, width = frame.shape[:2]
 
                 # put on overlay of telemetry
-                cv2.putText(frame,'DEPTH: {:6.2f} m'.format(self.sensorParameters['depthReading']),
+                cv2.putText(editedFrame,'DEPTH: {:6.2f} m'.format(self.sensorParameters['depthReading']),
                             (int(0.05*width),int(0.05*height)),
                             cv2.FONT_HERSHEY_PLAIN, 1, self.HUDcolour, 2) # size, colour, thickness modifier
                 
                 # put on tactical overlay
-                frame=cv2.line(frame,(int(0.2*width),int(0.5*height)),(int(0.8*width),int(0.5*height)),self.HUDcolour,2)
-                frame=cv2.line(frame,(int(0.5*width),int(0.1*height)),(int(0.5*width),int(0.9*height)),self.HUDcolour,2)
-                frame=cv2.circle(frame,(int(0.5*width),int(0.5*height)), int(0.25*width), self.HUDcolour, 2)
+                editedFrame=cv2.line(editedFrame,(int(0.2*width),int(0.5*height)),(int(0.8*width),int(0.5*height)),self.HUDcolour,2)
+                editedFrame=cv2.line(editedFrame,(int(0.5*width),int(0.1*height)),(int(0.5*width),int(0.9*height)),self.HUDcolour,2)
+                editedFrame=cv2.circle(editedFrame,(int(0.5*width),int(0.5*height)), int(0.25*width), self.HUDcolour, 2)
                 
                 # update the bitmap shown in the GUI panel, thus refreshing the frame
-                self.bmp.CopyFromBuffer(frame)
+                self.bmp.CopyFromBuffer(editedFrame)
                 self.videoFeed.SetBitmap(self.bmp)
+                
+                # Save the photo to a file in a separate thread (don't block the GUI).
+                thread.start_new_thread(savePhoto, (frame,self.videoDirectory))
             
             else:
                 # something went wrong with the video feed, close the cameraCapture and warn the user
@@ -462,9 +486,39 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         if self.controller:
             self.controller.parseEvents()
             
+            # for translating xy of the controller axes (x-columns,y-rows) into
+            # actual motor rpm demando
+            # TODO move to the class
+            mapCoordsX = np.array([[-1, 0, 1],
+                                   [-1, 0, 1],
+                                   [-1, 0, 1]],dtype=np.float64)
+            mapCoordsY = np.array([[ 1, 1, 1],
+                                   [ 0, 0, 0],
+                                   [-1,-1,-1]],dtype=np.float64)
+            
+            mapPort = np.array([[ 0,-1,-1],
+                                [-1, 0, 1],
+                                [ 0, 1, 1]],dtype=np.float64)
+            mapStbd = np.array([[-1,-1, 0],
+                                [ 1, 0,-1],
+                                [ 1, 1, 0]],dtype=np.float64)
+            
+            rpsInterpPort = interpolate.interp2d(mapCoordsX, mapCoordsY, mapPort, kind='linear')
+            rpsInterpStbd = interpolate.interp2d(mapCoordsX, mapCoordsY, mapStbd, kind='linear')
+            
+            rpmPortVer = rpsInterpPort(self.controller.axesValues['lhsStickXaxis'],
+                                       self.controller.axesValues['lhsStickYaxis'])
+            rpmPortHor = rpsInterpPort(self.controller.axesValues['rhsStickXaxis'],
+                                       self.controller.axesValues['rhsStickYaxis'])
+            
+            rpmStbdVer = rpsInterpStbd(self.controller.axesValues['lhsStickXaxis'],
+                                       self.controller.axesValues['lhsStickYaxis'])
+            rpmStbdHor = rpsInterpStbd(self.controller.axesValues['rhsStickXaxis'],
+                                       self.controller.axesValues['rhsStickYaxis'])
+            
             # TODO need to work out how to map raw controller inputs into actual values
             def mapMotorInputs(throttleDemand):
-                """ Accepts raw values between -1 and 1, scale and bound them to suit the arduino side """
+               # Accepts raw values between -1 and 1, scale and bound them to suit the arduino side
                 
                 if np.abs(throttleDemand) < self.deadZone:
                     controlParameter = self.zeroRpmValue # actual demand sent to arduino
@@ -478,13 +532,13 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
             
             # set the arduino demands for motor rpm and update dial values
             self.controlParameters['motorPortVer'],self.throttleDial_portVer.currentThrottle = \
-                    mapMotorInputs(self.controller.axesValues['lhsStickYaxis'])
+                    mapMotorInputs(rpmPortVer)
             self.controlParameters['motorStbdVer'],self.throttleDial_stbdVer.currentThrottle = \
-                    mapMotorInputs(self.controller.axesValues['rhsStickYaxis'])
+                    mapMotorInputs(rpmStbdVer)
             self.controlParameters['motorPortHor'],self.throttleDial_portHor.currentThrottle = \
-                    mapMotorInputs(self.controller.axesValues['lhsStickXaxis'])
+                    mapMotorInputs(rpmPortHor)
             self.controlParameters['motorStbdHor'],self.throttleDial_stbdHor.currentThrottle = \
-                    mapMotorInputs(self.controller.axesValues['rhsStickXaxis'])
+                    mapMotorInputs(rpmStbdHor)
                     
             # set forward LED
             self.controlParameters['forwardLED'] = int(self.controller.buttonValues['butB'])
