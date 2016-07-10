@@ -17,7 +17,6 @@
 
 /* TODO TODO TODO
 - add a custom LED module to make things more tidy
-- add an option to arm motors independently
 - figure out which ESC sends alarm at arming (throttle not zero?) (port hor?)
 */
 
@@ -27,7 +26,7 @@
 #include "DepthSensor.h"
 #include "Servo.h"
 
-// Standard c/C++ includes
+// Standard C/C++ includes
 #include <stdio.h>
 
 // ROV identifiers.
@@ -42,6 +41,7 @@ void parseInput(void);
 boolean getSerial(void);
 void sendSensorReadings(void);
 void armModules(void);
+void armActuator(int idx);
 
 /* =============================================================================
  * MOTOR DEFINITIONS.
@@ -68,6 +68,7 @@ BrushlessDCMotor engine4 = BrushlessDCMotor("motorStbdVer", THROTTLE_STEPS, MOTO
  * =============================================================================
  */
 Module armModulesModule = Module("armModules"); // Arms all the sensors and actuators.
+Module armActuatorModule = Module("armActuator"); // Arms only one of the actuators depending on the argument it receives.
 
 Module sendSensorReadingsModule = Module("sendSensorReadings"); // Sends sensor readings over serial.
 
@@ -100,7 +101,7 @@ const char OUTPUT_START_CHAR = '<'; // At the start of every command message sen
 const char END_CHAR = ';'; // End of the command message sent to and from the Arduino.
 const char DATA_DELIMITER[2] = ","; // Splits the command name and value. For some reason has to be size 2.
 
-Module* actuators[] = {&armModulesModule, &engine1, &engine2, &engine3, &engine4, &sendSensorReadingsModule, &refreshRate, &forwardLED};
+Module* actuators[] = {&armModulesModule, &armActuatorModule, &engine1, &engine2, &engine3, &engine4, &sendSensorReadingsModule, &refreshRate, &forwardLED};
 Module* sensors[] = {&depthSensor, &depthSensor2};
 
 /* =============================================================================
@@ -111,6 +112,7 @@ void setup(void)
 /* Prepare to listen to commands over serial and start everything up. */
 {
 	armModulesModule.setValue(0); // Don't arm the modules by default, wait for a command.
+	armActuatorModule.setValue(-1); // Will arm the actuator that's under the index of armActuatorModule value.
 	refreshRate.setValue(10); // Set default delay in milliseconds in the main loop
 	forwardLED.setValue(0);
 	
@@ -145,6 +147,14 @@ void loop(void)
 	{
 		armModules(); // This function handles everything.
 		armModulesModule.setValue(0); // We're done arming now.
+	}
+	
+	// Arm the engine that was requested.
+	if(armActuatorModule.getValue()!=-1)
+	{
+		// Arm whatever module the user wants.
+		armActuator(armActuatorModule.getValue())
+		armActuatorModule.setValue(-1); // Go back to default value.
 	}
 	
 	// LED switch
@@ -285,6 +295,25 @@ void sendSensorReadings(void)
 	
 	Serial.println( outputDataBuffer ); // Send the formatted message.
 	outputDataBuffer = ""; // Restart the buffer so it's clean before sending the next message.
+}
+
+void armActuator(int idx)
+/* Arm the actuator that's under the input index in the actuators array.
+ * int idx - index of the actuators corresponding to the engine that will be armed.
+ */
+{
+	int setupDelay = actuators[idx]->arm(); // Arm only this actuator.
+		
+	// Send the message saying how long the delay will last.
+	outputDataBuffer += OUTPUT_START_CHAR; // Start the message.
+	outputDataBuffer += "setupDelay";
+	outputDataBuffer += DATA_DELIMITER;
+	outputDataBuffer += String(setupDelay);
+	outputDataBuffer += END_CHAR; // Terminate the message.
+	Serial.println( outputDataBuffer ); // Send the formatted message.
+	outputDataBuffer = ""; // Restart the buffer so it's clean before sending the next message.
+	
+	delay(setupDelay); // Wait for as long as required by the slowest arming module.
 }
 
 void armModules(void)
