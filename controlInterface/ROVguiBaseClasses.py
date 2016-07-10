@@ -380,6 +380,18 @@ class communicationsSettingsDialog ( wx.Dialog ):
 		
 		bSizer15.Add( bSizer193, 1, wx.EXPAND, 5 )
 		
+		bSizer20 = wx.BoxSizer( wx.HORIZONTAL )
+		
+		self.m_staticText9 = wx.StaticText( self, wx.ID_ANY, u"Video frames path", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText9.Wrap( -1 )
+		bSizer20.Add( self.m_staticText9, 1, wx.ALL, 5 )
+		
+		self.videoFramePathPicker = wx.DirPickerCtrl( self, wx.ID_ANY, wx.EmptyString, u"Select a folder", wx.DefaultPosition, wx.DefaultSize, wx.DIRP_DEFAULT_STYLE )
+		bSizer20.Add( self.videoFramePathPicker, 0, wx.ALL, 5 )
+		
+		
+		bSizer15.Add( bSizer20, 1, wx.EXPAND, 5 )
+		
 		
 		self.SetSizer( bSizer15 )
 		self.Layout()
@@ -388,16 +400,21 @@ class communicationsSettingsDialog ( wx.Dialog ):
 		self.Centre( wx.BOTH )
 		
 		# Connect Events
+		self.Bind( wx.EVT_CLOSE, self.closedSettingsDialog )
 		self.arduinoLoopFreqTextControl.Bind( wx.EVT_TEXT, self.setArduinoFreq )
 		self.videoFrameFreqTextControl.Bind( wx.EVT_TEXT, self.setVideoFreq )
 		self.controlInputsFreqTextControl.Bind( wx.EVT_TEXT, self.setControlFreq )
 		self.sensorReadingsFreqTextControl.Bind( wx.EVT_TEXT, self.setSensorsFreq )
+		self.videoFramePathPicker.Bind( wx.EVT_DIRPICKER_CHANGED, self.changedFrameDir )
 	
 	def __del__( self ):
 		pass
 	
 	
 	# Virtual event handlers, overide them in your derived class
+	def closedSettingsDialog( self, event ):
+		event.Skip()
+	
 	def setArduinoFreq( self, event ):
 		event.Skip()
 	
@@ -408,6 +425,9 @@ class communicationsSettingsDialog ( wx.Dialog ):
 		event.Skip()
 	
 	def setSensorsFreq( self, event ):
+		event.Skip()
+	
+	def changedFrameDir( self, event ):
 		event.Skip()
 	
 

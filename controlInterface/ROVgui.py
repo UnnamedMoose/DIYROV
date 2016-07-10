@@ -112,6 +112,12 @@ class rovGuiCommunicationsSettingsDialog( ROVguiBaseClasses.communicationsSettin
         if self.sensorReadingsFreqTextControl.GetValue():
             self.GetParent().freqSensorReadings = int(self.sensorReadingsFreqTextControl.GetValue())
             self.GetParent().sensorReadingsTimer.Start(int(1.0/self.GetParent().freqSensorReadings*1000.0))
+    
+    def changedFrameDir(self,event):
+        self.GetParent().videoDirectory = self.videoFramePathPicker.GetPath()
+    
+    def closedSettingsDialog(self,even):
+        self.Destroy()
 
 class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
     
@@ -132,7 +138,6 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         self.cameraCapture = 0 # this will hold the OpenCV VideocameraCapture object once it gets initialised
         self.frameSize = (640,480) # approximate width and height of the camera
         self.videoDirectory="/home/artur/Desktop" # will save every captured frame into this directory.
-        #TODO add a dialgo to be able to change the videoDirectory
         
         # serial communication
         self.portOpen = False # indicates if the serial communication port is open
@@ -148,6 +153,24 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         self.deadZone = 0.05 # extent of raw input which gets treated like zero
         self.lowerRpmLimit = 20 # lower value of output to arduino
         self.zeroRpmValue = 10 # arduino doesn't appear to like an actual 0, foold it by giving a small output
+        
+        # for translating xy of the controller axes (x-columns,y-rows) into actual motor rpm demand
+        mapCoordsX = np.array([[-1, 0, 1],
+                               [-1, 0, 1],
+                               [-1, 0, 1]],dtype=np.float64)
+        mapCoordsY = np.array([[ 1, 1, 1],
+                               [ 0, 0, 0],
+                               [-1,-1,-1]],dtype=np.float64)
+        
+        mapPort = np.array([[ 0,-1,-1],
+                            [-1, 0, 1],
+                            [ 0, 1, 1]],dtype=np.float64)
+        mapStbd = np.array([[-1,-1, 0],
+                            [ 1, 0,-1],
+                            [ 1, 1, 0]],dtype=np.float64)
+        
+        self.rpsInterpPort = interpolate.interp2d(mapCoordsX, mapCoordsY, mapPort, kind='linear')
+        self.rpsInterpStbd = interpolate.interp2d(mapCoordsX, mapCoordsY, mapStbd, kind='linear')
         
         # create the internal bitmap object by using an empty bitmap, this will be projected onto the panel
         self.bmp = wx.EmptyBitmap(self.frameSize[0],self.frameSize[1])
@@ -299,6 +322,7 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         """ show a dialog for customising communicaitons settings """
         dialog = rovGuiCommunicationsSettingsDialog(self)
         dialog.ShowModal()
+        print self.videoDirectory
         
     def onUpdateControllers(self,event):
         """ update the list of choices for available controllers """
@@ -486,35 +510,15 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         if self.controller:
             self.controller.parseEvents()
             
-            # for translating xy of the controller axes (x-columns,y-rows) into
-            # actual motor rpm demando
-            # TODO move to the class
-            mapCoordsX = np.array([[-1, 0, 1],
-                                   [-1, 0, 1],
-                                   [-1, 0, 1]],dtype=np.float64)
-            mapCoordsY = np.array([[ 1, 1, 1],
-                                   [ 0, 0, 0],
-                                   [-1,-1,-1]],dtype=np.float64)
+            rpmPortVer = self.rpsInterpPort(self.controller.axesValues['lhsStickXaxis'],
+                                            self.controller.axesValues['lhsStickYaxis'])
+            rpmPortHor = self.rpsInterpPort(self.controller.axesValues['rhsStickXaxis'],
+                                            self.controller.axesValues['rhsStickYaxis'])
             
-            mapPort = np.array([[ 0,-1,-1],
-                                [-1, 0, 1],
-                                [ 0, 1, 1]],dtype=np.float64)
-            mapStbd = np.array([[-1,-1, 0],
-                                [ 1, 0,-1],
-                                [ 1, 1, 0]],dtype=np.float64)
-            
-            rpsInterpPort = interpolate.interp2d(mapCoordsX, mapCoordsY, mapPort, kind='linear')
-            rpsInterpStbd = interpolate.interp2d(mapCoordsX, mapCoordsY, mapStbd, kind='linear')
-            
-            rpmPortVer = rpsInterpPort(self.controller.axesValues['lhsStickXaxis'],
-                                       self.controller.axesValues['lhsStickYaxis'])
-            rpmPortHor = rpsInterpPort(self.controller.axesValues['rhsStickXaxis'],
-                                       self.controller.axesValues['rhsStickYaxis'])
-            
-            rpmStbdVer = rpsInterpStbd(self.controller.axesValues['lhsStickXaxis'],
-                                       self.controller.axesValues['lhsStickYaxis'])
-            rpmStbdHor = rpsInterpStbd(self.controller.axesValues['rhsStickXaxis'],
-                                       self.controller.axesValues['rhsStickYaxis'])
+            rpmStbdVer = self.rpsInterpStbd(self.controller.axesValues['lhsStickXaxis'],
+                                            self.controller.axesValues['lhsStickYaxis'])
+            rpmStbdHor = self.rpsInterpStbd(self.controller.axesValues['rhsStickXaxis'],
+                                            self.controller.axesValues['rhsStickYaxis'])
             
             # TODO need to work out how to map raw controller inputs into actual values
             def mapMotorInputs(throttleDemand):
