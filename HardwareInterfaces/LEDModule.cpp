@@ -1,30 +1,52 @@
-#include "DepthSensor.h"
+#include "LEDModule.h"
 
-DepthSensor::DepthSensor(const char* sensorID, int sensorInputPin)
+LEDModule::LEDModule(const char* sensorID, int sensorOutputPin)
 :
 Module(sensorID),
-sensorPin(sensorInputPin)
-/* Initialise the instance of this sensor that will read static pressure head
- * and convert it to depth measurements.
+outputPin(sensorOutputPin)
+/* Initialise the instance of this sensor that will turn the LED on or off by
+ * toggling a pin high or low.
  * 
  * @param sensorID - name of this sensor that will be sent to the Arduino to get
  * 	its value.
- * @param sensorInputPin - the pin to which this sensor is attached.
+ * @param sensorOutputPin - the pin to which the LEDs are attached.
  */
 {
-	pinMode(sensorPin,OUTPUT);
+	pinMode(sensorOutputPin,OUTPUT);
 }
 
-DepthSensor::DepthSensor(void){}; // Do nothing special here.
+LEDModule::LEDModule(void){}; // Do nothing special here.
 
-DepthSensor::~DepthSensor(void){}; // Do nothing special here.
+LEDModule::~LEDModule(void){}; // Do nothing special here.
 
-int DepthSensor::getValue(void)
-/* Get the reading from the sensor, convert it to depth, and return it.
- * 
- * @return - reading of the current depth in salt water in metres.
+void LEDModule::setValue(int value)
+/* Set the pin high or low to turn the LEDs on or off. If value==1 the LEDs are
+ * turned on, if 0 they're turned off.
  */
 {
-	currentValue++;//TODO: get sensor reading here.
-	return currentValue;
+	if(value==1)
+	{
+		digitalWrite(outputPin, HIGH);
+	}
+	else if(value==0)
+	{
+		digitalWrite(outputPin, LOW);
+	}
+}
+
+LEDModule::blink(int delay, int noBlinks)
+/* Turn the LED on and off a number of times, wait for a given number of milliseconds
+ * when the LEDs are on, and then the same amount of time before turning them 
+ * back on.
+ * @param delay - how many milliseconts to wait when the LEDs are on and off.
+ * @param noBlinks - how many times to blink the LEDs.
+ */
+{
+	for(int i=0;i<noBlinks;i++) // Turn the LEDs on, wait a while, and turn it off and wait again.
+	{
+		digitalWrite(outputPin, HIGH);
+		delay(delay); // Keep the LED on for a while.
+		digitalWrite(outputPin, LOW);
+		delay(delay); // Wait before turning the LEDs back on.
+	}
 }

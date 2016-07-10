@@ -1,38 +1,34 @@
-/* A class that serves as an interface between an Arduino and a pressure sensor,
- * readings of which will be converted into depth.
+/* A class that serves as an interface between an Arduino and a LED lamp.
  *
  * This header and the source have to be placed in the Arduino libraries' directory,
- * e.g. /usr/share/arduino/libraries/ in DepthSensor folder.
+ * e.g. /usr/share/arduino/libraries/ in LEDModule folder.
  *
  * @author: Aleksander Lidtke
  * @email: aleksadner.lidtke@gmail.com
  * @url: www.aleksanderlidtke.com
- * @since:  6 Sep 2015
+ * @since: 10 Jul 2016
  * @version: 1.0.0
  * 
  * CHANGELOG
- *  6 Sep 2015 - 1.0.0 - Alek Lidtke - released the first version.
+ * 10 Jul 2016 - 1.0.0 - Alek Lidtke - released the first version.
  */
-#ifndef DEPTHSENSOR_H
-#define DEPTHSENSOR_H
+#ifndef LEDMODULE_H
+#define LEDMODULE_H
 
 #include "Arduino.h" // Basic Arduino stuff.
 #include "Module.h" // The base class of all the actuators and sensors.
 
-class DepthSensor : public Module
+class LEDModule : public Module
 {
 	private:
 		int outputPin;
 	public:
-		DepthSensor(const char* sensorID, int sensorInputPin);
-		DepthSensor(void);
-		~DepthSensor(void);
-
-		int getValue(void); // Override parent method. TODO redundant
+		LEDModule(const char* sensorID, int sensorOutputPin);
+		LEDModule(void);
+		~LEDModule(void);
 		
-		int setValue(void); // override and set pin output
+		void setValue(int value); // override and set pin output
 		int blink(int delay, int noBlinks); // blink a couple of times with a given interval
-		
 };
 
 #endif
