@@ -17,13 +17,13 @@ import cv2
 import os
 import serial
 import numpy as np
-import thread, datetime
+import datetime, multiprocessing
 from scipy import interpolate
 
 def savePhotos(imgList,directory):
     """ Save every photo froma list into separate files, the image nime will
     cointain the current time to make sure nothing is overwritten. Intended to
-    be used in a separate thread.
+    be used in a separate proces not to block the GUI.
     
     Arguments
     ----------
@@ -32,7 +32,8 @@ def savePhotos(imgList,directory):
     
     Example
     ----------
-    thread.start_new_thread(savePhotos, (imgs,"./"))
+    p = multiprocessing.Process(target=savePhotos, args=(self.imgBuff,self.videoDirectory))
+    p.start() # Dont p.join - will block the GUI thread.
     """
     outName=datetime.datetime.now().strftime("%Y%m%d_%H%M%S%f") # Time stamp the images.
     for i in range(len(imgList)):
@@ -132,7 +133,7 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         self.freqArduino = 100 # default refresh rate for the Arduino in Hz
         
         # video feed
-        self.freqVideo = 15 # frame rate update frquency
+        self.freqVideo = 5 # frame rate update frquency
         self.HUDcolour = (0,255,0) # RGB colour of the overlay on the HUD
         self.feedOn = False # switch indicating whether the video feed is on or off
         self.cameraIndex = 1 # index of the potential candidates for OpenCV capture object to actually use
@@ -140,7 +141,7 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         self.frameSize = (640,480) # approximate width and height of the camera
         self.videoDirectory="/home/artur/Desktop" # will save every captured frame into this directory.
         self.imgBuff=[] # Hold images here and save them to HD every so often.
-        self.imgBufLen=100 # Will save photos to HD when the buffer holds this many images. Need this to avoid saving every single photo to HD.
+        self.imgBufLen=1000 # Will save photos to HD when the buffer holds this many images. Need this to avoid saving every single photo to HD.
         
         # serial communication
         self.portOpen = False # indicates if the serial communication port is open
@@ -499,10 +500,11 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
                 self.bmp.CopyFromBuffer(editedFrame)
                 self.videoFeed.SetBitmap(self.bmp)
                 
-                # Save the photo to a file in a separate thread (don't block the GUI).
+                # Save the photo to a file in a separate process (don't block the GUI).
                 if len(self.imgBuff)>=self.imgBufLen:
-                    thread.start_new_thread(savePhotos, (self.imgBuff,self.videoDirectory))
-                    self.imgBuff=[] # Reset.
+                    p = multiprocessing.Process(target=savePhotos, args=(self.imgBuff,self.videoDirectory))
+                    p.start() # Dont p.join - will block the GUI thread.
+                    self.imgBuff=[] # Clear the buffer.
             
             else:
                 # something went wrong with the video feed, close the cameraCapture and warn the user
