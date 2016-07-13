@@ -28,7 +28,7 @@ class LEDModule : public Module
 		~LEDModule(void);
 		
 		void setValue(int value); // override and set pin output
-		int blink(int delay, int noBlinks); // blink a couple of times with a given interval
+		void blink(int blinkDelay, int noBlinks); // blink a couple of times with a given interval
 };
 
 #endif

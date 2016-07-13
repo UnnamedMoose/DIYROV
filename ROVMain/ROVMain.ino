@@ -151,7 +151,7 @@ void loop(void)
 	if(armActuatorModule.getValue()!=-1)
 	{
 		// Arm whatever module the user wants.
-		armActuator(armActuatorModule.getValue())
+		armActuator(armActuatorModule.getValue());
 		armActuatorModule.setValue(-1); // Go back to default value.
 	}
 	
