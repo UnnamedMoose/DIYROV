@@ -20,22 +20,23 @@ import numpy as np
 import thread, datetime
 from scipy import interpolate
 
-def savePhoto(img,directory):
-    """ Save a given photo into a file, the image nime will cointain the current
-    time to make sure nothing is overwritten. Intended to be used in a separate
-    thread.
+def savePhotos(imgList,directory):
+    """ Save every photo froma list into separate files, the image nime will
+    cointain the current time to make sure nothing is overwritten. Intended to
+    be used in a separate thread.
     
     Arguments
     ----------
-    img - output of cv2.VideoCapture.read.
+    imgList - list of images as output of cv2.VideoCapture.read.
     directory - str with the directory where the photo will be writen.
     
     Example
     ----------
-    thread.start_new_thread(savePhoto, (img,"./"))
+    thread.start_new_thread(savePhotos, (imgs,"./"))
     """
-    outName=datetime.datetime.now().strftime("%Y%m%d_%H%M%S%f")+".jpg" # Time stamp the images.
-    cv2.imwrite(os.path.join(directory,outName), img)
+    outName=datetime.datetime.now().strftime("%Y%m%d_%H%M%S%f") # Time stamp the images.
+    for i in range(len(imgList)):
+        cv2.imwrite(os.path.join(directory,outName)+"_{}.jpg".format(i), imgList[i])
 
 class IntValidator(wx.PyValidator):
     """ Validates data as it is entered into the text controls. """
@@ -138,6 +139,8 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         self.cameraCapture = 0 # this will hold the OpenCV VideocameraCapture object once it gets initialised
         self.frameSize = (640,480) # approximate width and height of the camera
         self.videoDirectory="/home/artur/Desktop" # will save every captured frame into this directory.
+        self.imgBuff=[] # Hold images here and save them to HD every so often.
+        self.imgBufLen=100 # Will save photos to HD when the buffer holds this many images. Need this to avoid saving every single photo to HD.
         
         # serial communication
         self.portOpen = False # indicates if the serial communication port is open
@@ -322,7 +325,6 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         """ show a dialog for customising communicaitons settings """
         dialog = rovGuiCommunicationsSettingsDialog(self)
         dialog.ShowModal()
-        print self.videoDirectory
         
     def onUpdateControllers(self,event):
         """ update the list of choices for available controllers """
@@ -479,7 +481,10 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
                 # apply any colour filters, get the size of the frame
                 editedFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) # Keep the original image in RGB  to be able to save that one.
                 height, width = frame.shape[:2]
-
+                
+                # will save this photo later
+                self.imgBuff.append(frame)
+                
                 # put on overlay of telemetry
                 cv2.putText(editedFrame,'DEPTH: {:6.2f} m'.format(self.sensorParameters['depthReading']),
                             (int(0.05*width),int(0.05*height)),
@@ -495,7 +500,9 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
                 self.videoFeed.SetBitmap(self.bmp)
                 
                 # Save the photo to a file in a separate thread (don't block the GUI).
-                thread.start_new_thread(savePhoto, (frame,self.videoDirectory))
+                if len(self.imgBuff)>=self.imgBufLen:
+                    thread.start_new_thread(savePhotos, (self.imgBuff,self.videoDirectory))
+                    self.imgBuff=[] # Reset.
             
             else:
                 # something went wrong with the video feed, close the cameraCapture and warn the user
@@ -520,7 +527,6 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
             rpmStbdHor = self.rpsInterpStbd(self.controller.axesValues['rhsStickXaxis'],
                                             self.controller.axesValues['rhsStickYaxis'])
             
-            # TODO need to work out how to map raw controller inputs into actual values
             def mapMotorInputs(throttleDemand):
                # Accepts raw values between -1 and 1, scale and bound them to suit the arduino side
                 
