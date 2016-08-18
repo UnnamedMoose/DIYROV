@@ -151,7 +151,7 @@ void loop(void)
 	if(armActuatorModule.getValue()!=-1)
 	{
 		// Arm whatever module the user wants.
-		armActuator(armActuatorModule.getValue())
+		armActuator(armActuatorModule.getValue());
 		armActuatorModule.setValue(-1); // Go back to default value.
 	}
 	
@@ -247,7 +247,7 @@ void parseInput(void)
 	else
 	{	
 	  // Check what value is coming next strings
-	  for(int actuatorI=0;actuatorI<sizeof(actuators)/sizeof(actuators[0]);actuatorI++)
+	  for(long int actuatorI=0;actuatorI<sizeof(actuators)/sizeof(actuators[0]);actuatorI++)
 	  {
 	  	if (strcmp(token, actuators[actuatorI]->getIdentifier()) == 0)
 	  	{
@@ -269,7 +269,7 @@ void sendSensorReadings(void)
  */
 {
 	outputDataBuffer += OUTPUT_START_CHAR; // Start the message.
-	for(int i=0;i<sizeof(sensors)/sizeof(sensors[0]);i++)
+	for(long int i=0;i<sizeof(sensors)/sizeof(sensors[0]);i++)
 	{
 		outputDataBuffer += String( sensors[i]->getIdentifier() );
 		outputDataBuffer += DATA_DELIMITER;
@@ -312,12 +312,12 @@ void armModules(void)
  */
 {
 	int setupDelay(0); // By default wait for 0 seconds, i.e. arm nothing.
-	for(int i=0;i<sizeof(actuators)/sizeof(actuators[0]);i++) // Arm all actuators.
+	for(long int i=0;i<sizeof(actuators)/sizeof(actuators[0]);i++) // Arm all actuators.
 	{
 		int delayRequested = actuators[i]->arm();
 		if (delayRequested > setupDelay) setupDelay = delayRequested;
 	}
-	for(int i=0;i<sizeof(sensors)/sizeof(sensors[0]);i++) // Arm all sensors.
+	for(long int i=0;i<sizeof(sensors)/sizeof(sensors[0]);i++) // Arm all sensors.
 	{
 		int delayRequested = sensors[i]->arm();
 		if (delayRequested > setupDelay) setupDelay = delayRequested;

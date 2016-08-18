@@ -17,6 +17,27 @@ import cv2
 import os
 import serial
 import numpy as np
+import datetime, multiprocessing
+from scipy import interpolate
+
+def savePhotos(imgList,directory):
+    """ Save every photo froma list into separate files, the image nime will
+    cointain the current time to make sure nothing is overwritten. Intended to
+    be used in a separate proces not to block the GUI.
+    
+    Arguments
+    ----------
+    imgList - list of images as output of cv2.VideoCapture.read.
+    directory - str with the directory where the photo will be writen.
+    
+    Example
+    ----------
+    p = multiprocessing.Process(target=savePhotos, args=(self.imgBuff,self.videoDirectory))
+    p.start() # Dont p.join - will block the GUI thread.
+    """
+    outName=datetime.datetime.now().strftime("%Y%m%d_%H%M%S%f") # Time stamp the images.
+    for i in range(len(imgList)):
+        cv2.imwrite(os.path.join(directory,outName)+"_{}.jpg".format(i), imgList[i])
 
 class IntValidator(wx.PyValidator):
     """ Validates data as it is entered into the text controls. """
@@ -93,6 +114,12 @@ class rovGuiCommunicationsSettingsDialog( ROVguiBaseClasses.communicationsSettin
         if self.sensorReadingsFreqTextControl.GetValue():
             self.GetParent().freqSensorReadings = int(self.sensorReadingsFreqTextControl.GetValue())
             self.GetParent().sensorReadingsTimer.Start(int(1.0/self.GetParent().freqSensorReadings*1000.0))
+    
+    def changedFrameDir(self,event):
+        self.GetParent().videoDirectory = self.videoFramePathPicker.GetPath()
+    
+    def closedSettingsDialog(self,even):
+        self.Destroy()
 
 class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
     
@@ -106,12 +133,15 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         self.freqArduino = 100 # default refresh rate for the Arduino in Hz
         
         # video feed
-        self.freqVideo = 15 # frame rate update frquency
+        self.freqVideo = 5 # frame rate update frquency
         self.HUDcolour = (0,255,0) # RGB colour of the overlay on the HUD
         self.feedOn = False # switch indicating whether the video feed is on or off
         self.cameraIndex = 1 # index of the potential candidates for OpenCV capture object to actually use
         self.cameraCapture = 0 # this will hold the OpenCV VideocameraCapture object once it gets initialised
         self.frameSize = (640,480) # approximate width and height of the camera
+        self.videoDirectory="/home/artur/Desktop" # will save every captured frame into this directory.
+        self.imgBuff=[] # Hold images here and save them to HD every so often.
+        self.imgBufLen=1000 # Will save photos to HD when the buffer holds this many images. Need this to avoid saving every single photo to HD.
         
         # serial communication
         self.portOpen = False # indicates if the serial communication port is open
@@ -127,6 +157,24 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         self.deadZone = 0.05 # extent of raw input which gets treated like zero
         self.lowerRpmLimit = 20 # lower value of output to arduino
         self.zeroRpmValue = 10 # arduino doesn't appear to like an actual 0, foold it by giving a small output
+        
+        # for translating xy of the controller axes (x-columns,y-rows) into actual motor rpm demand
+        mapCoordsX = np.array([[-1, 0, 1],
+                               [-1, 0, 1],
+                               [-1, 0, 1]],dtype=np.float64)
+        mapCoordsY = np.array([[ 1, 1, 1],
+                               [ 0, 0, 0],
+                               [-1,-1,-1]],dtype=np.float64)
+        
+        mapPort = np.array([[ 0,-1,-1],
+                            [-1, 0, 1],
+                            [ 0, 1, 1]],dtype=np.float64)
+        mapStbd = np.array([[-1,-1, 0],
+                            [ 1, 0,-1],
+                            [ 1, 1, 0]],dtype=np.float64)
+        
+        self.rpsInterpPort = interpolate.interp2d(mapCoordsX, mapCoordsY, mapPort, kind='linear')
+        self.rpsInterpStbd = interpolate.interp2d(mapCoordsX, mapCoordsY, mapStbd, kind='linear')
         
         # create the internal bitmap object by using an empty bitmap, this will be projected onto the panel
         self.bmp = wx.EmptyBitmap(self.frameSize[0],self.frameSize[1])
@@ -422,7 +470,7 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
     def getNewFrame(self):
         """ This gets called when the internal timer requests a new frame to be updated.
         The function cameraCaptures a new frame and sends it to the static bitmap inside
-        video feed panel """
+        video feed panel. It also saves the capture to a file into self.videoDirectory. """
 
         # see if the video feed is on
         if self.feedOn:
@@ -432,22 +480,31 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
             
             if ret:
                 # apply any colour filters, get the size of the frame
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                editedFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) # Keep the original image in RGB  to be able to save that one.
                 height, width = frame.shape[:2]
-
+                
+                # will save this photo later
+                self.imgBuff.append(frame)
+                
                 # put on overlay of telemetry
-                cv2.putText(frame,'DEPTH: {:6.2f} m'.format(self.sensorParameters['depthReading']),
+                cv2.putText(editedFrame,'DEPTH: {:6.2f} m'.format(self.sensorParameters['depthReading']),
                             (int(0.05*width),int(0.05*height)),
                             cv2.FONT_HERSHEY_PLAIN, 1, self.HUDcolour, 2) # size, colour, thickness modifier
                 
                 # put on tactical overlay
-                frame=cv2.line(frame,(int(0.2*width),int(0.5*height)),(int(0.8*width),int(0.5*height)),self.HUDcolour,2)
-                frame=cv2.line(frame,(int(0.5*width),int(0.1*height)),(int(0.5*width),int(0.9*height)),self.HUDcolour,2)
-                frame=cv2.circle(frame,(int(0.5*width),int(0.5*height)), int(0.25*width), self.HUDcolour, 2)
+                editedFrame=cv2.line(editedFrame,(int(0.2*width),int(0.5*height)),(int(0.8*width),int(0.5*height)),self.HUDcolour,2)
+                editedFrame=cv2.line(editedFrame,(int(0.5*width),int(0.1*height)),(int(0.5*width),int(0.9*height)),self.HUDcolour,2)
+                editedFrame=cv2.circle(editedFrame,(int(0.5*width),int(0.5*height)), int(0.25*width), self.HUDcolour, 2)
                 
                 # update the bitmap shown in the GUI panel, thus refreshing the frame
-                self.bmp.CopyFromBuffer(frame)
+                self.bmp.CopyFromBuffer(editedFrame)
                 self.videoFeed.SetBitmap(self.bmp)
+                
+                # Save the photo to a file in a separate process (don't block the GUI).
+                if len(self.imgBuff)>=self.imgBufLen:
+                    p = multiprocessing.Process(target=savePhotos, args=(self.imgBuff,self.videoDirectory))
+                    p.start() # Dont p.join - will block the GUI thread.
+                    self.imgBuff=[] # Clear the buffer.
             
             else:
                 # something went wrong with the video feed, close the cameraCapture and warn the user
@@ -462,9 +519,18 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         if self.controller:
             self.controller.parseEvents()
             
-            # TODO need to work out how to map raw controller inputs into actual values
+            rpmPortVer = self.rpsInterpPort(self.controller.axesValues['lhsStickXaxis'],
+                                            self.controller.axesValues['lhsStickYaxis'])
+            rpmPortHor = self.rpsInterpPort(self.controller.axesValues['rhsStickXaxis'],
+                                            self.controller.axesValues['rhsStickYaxis'])
+            
+            rpmStbdVer = self.rpsInterpStbd(self.controller.axesValues['lhsStickXaxis'],
+                                            self.controller.axesValues['lhsStickYaxis'])
+            rpmStbdHor = self.rpsInterpStbd(self.controller.axesValues['rhsStickXaxis'],
+                                            self.controller.axesValues['rhsStickYaxis'])
+            
             def mapMotorInputs(throttleDemand):
-                """ Accepts raw values between -1 and 1, scale and bound them to suit the arduino side """
+               # Accepts raw values between -1 and 1, scale and bound them to suit the arduino side
                 
                 if np.abs(throttleDemand) < self.deadZone:
                     controlParameter = self.zeroRpmValue # actual demand sent to arduino
@@ -478,13 +544,13 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
             
             # set the arduino demands for motor rpm and update dial values
             self.controlParameters['motorPortVer'],self.throttleDial_portVer.currentThrottle = \
-                    mapMotorInputs(self.controller.axesValues['lhsStickYaxis'])
+                    mapMotorInputs(rpmPortVer)
             self.controlParameters['motorStbdVer'],self.throttleDial_stbdVer.currentThrottle = \
-                    mapMotorInputs(self.controller.axesValues['rhsStickYaxis'])
+                    mapMotorInputs(rpmStbdVer)
             self.controlParameters['motorPortHor'],self.throttleDial_portHor.currentThrottle = \
-                    mapMotorInputs(self.controller.axesValues['lhsStickXaxis'])
+                    mapMotorInputs(rpmPortHor)
             self.controlParameters['motorStbdHor'],self.throttleDial_stbdHor.currentThrottle = \
-                    mapMotorInputs(self.controller.axesValues['rhsStickXaxis'])
+                    mapMotorInputs(rpmStbdHor)
                     
             # set forward LED
             self.controlParameters['forwardLED'] = int(self.controller.buttonValues['butB'])
