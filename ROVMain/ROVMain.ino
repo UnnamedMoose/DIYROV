@@ -60,8 +60,8 @@ BrushlessDCMotor engine2 = BrushlessDCMotor("motorStbdHor", THROTTLE_STEPS, MOTO
 	MOTOR_MIN_PULSE_WIDTH, MOTOR_ARM_PULSE_WIDTH, 5, 4); // green
 BrushlessDCMotor engine3 = BrushlessDCMotor("motorPortVer", THROTTLE_STEPS,MOTOR_MAX_PULSE_WIDTH,
 	MOTOR_MIN_PULSE_WIDTH, MOTOR_ARM_PULSE_WIDTH, 6, 7); // white
-BrushlessDCMotor engine4 = BrushlessDCMotor("motorStbdVer", THROTTLE_STEPS, MOTOR_MAX_PULSE_WIDTH,
-	MOTOR_MIN_PULSE_WIDTH, MOTOR_ARM_PULSE_WIDTH, 9, 8); // blue
+BrushlessDCMotor engine4 = BrushlessDCMotor("motorStbdVer", THROTTLE_STEPS,
+	MOTOR_MAX_PULSE_WIDTH, 900, 1100, 9, 8); // blue
 
 /* =============================================================================
  * MISC ACTUATOR AND COMMAND DEFINITIONS.
