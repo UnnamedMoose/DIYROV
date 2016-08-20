@@ -224,6 +224,8 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         
         # this needs to be called for the modules to be armed
         self.armModulesCommand = {'armModules':1}
+        
+        self.Layout() # Make sure everything is nicely located in the sizers on startup.
     
     def onClose( self, event ):
         # close the serial port before terminating, need to make sure it isn't left hanging
