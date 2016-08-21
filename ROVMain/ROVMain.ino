@@ -61,7 +61,7 @@ BrushlessDCMotor engine2 = BrushlessDCMotor("motorStbdHor", THROTTLE_STEPS, MOTO
 BrushlessDCMotor engine3 = BrushlessDCMotor("motorPortVer", THROTTLE_STEPS,MOTOR_MAX_PULSE_WIDTH,
 	MOTOR_MIN_PULSE_WIDTH, MOTOR_ARM_PULSE_WIDTH, 6, 7); // white
 BrushlessDCMotor engine4 = BrushlessDCMotor("motorStbdVer", THROTTLE_STEPS,
-	MOTOR_MAX_PULSE_WIDTH, 900, 1100, 9, 8); // blue
+	2050, 950, 1200, 9, 8); // blue
 
 /* =============================================================================
  * MISC ACTUATOR AND COMMAND DEFINITIONS.
@@ -82,6 +82,7 @@ const int ON_LED_PIN = 13; // LED on the Arduino board that will be lit when the
  * SENSOR DEFINITIONS.
  * =============================================================================
  */
+// TODO depth sensor plugged in to analog A0 pin
 DepthSensor depthSensor = DepthSensor("depthReading",15); // For now a mock sensor.
 DepthSensor depthSensor2 = DepthSensor("depthReading2",16); // Another mock sensor to make sure the message concatenation works well.
 
