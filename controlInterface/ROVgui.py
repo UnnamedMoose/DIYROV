@@ -224,6 +224,8 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         
         # this needs to be called for the modules to be armed
         self.armModulesCommand = {'armModules':1}
+        
+        self.Layout() # Make sure everything is nicely located in the sizers on startup.
     
     def onClose( self, event ):
         # close the serial port before terminating, need to make sure it isn't left hanging
@@ -373,7 +375,15 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         # add the newly found controllers
         self.controllerChoice.Append('None')
         for controller in controllers:
-            self.controllerChoice.Append(controller)
+            # Make sure controller label isn't too long, which will make the layout explode - split it into parts if need be.
+        	chunkIDs=range(0,len(controller),CONTROLLER_NAME_CHUNK_LENGTH) # At least [0]
+        	chunkIDs.append(len(controller)) # Always need to go up to the entire length of the name.
+        	# This is the name of the controller, or the first part of it that's shorter than the desired length.
+        	controllerName=controller[chunkIDs[0]:chunkIDs[1]]
+        	for i in range(1,len(chunkIDs)-1): # Add further parts of the controller's name.
+	        	# Put this part of the controller's name in another line and indent slightly
+				controllerName=controllerName+"\n"+"    "+controller[chunkIDs[i]:chunkIDs[i+1]]
+        	self.controllerChoice.Append(controllerName) # Append this string to the selection.
             
         # attempt to return to the last selected controller, use None if it's not found
         if currentSelection in controllers:
