@@ -61,7 +61,7 @@ class mainFrame ( wx.Frame ):
 		
 		fgSizer2.Add( throttleSizerPort, 1, wx.EXPAND, 5 )
 		
-		self.arrangementGraphic = wx.StaticBitmap( self.statusDisplay, wx.ID_ANY, wx.Bitmap( u"../Documentation/Drawings/arrangementOverview.png", wx.BITMAP_TYPE_ANY ), wx.DefaultPosition, wx.Size( 100,250 ), 0 )
+		self.arrangementGraphic = wx.StaticBitmap( self.statusDisplay, wx.ID_ANY, wx.Bitmap( u"arrangementOverview.png", wx.BITMAP_TYPE_ANY ), wx.DefaultPosition, wx.Size( 100,250 ), 0 )
 		fgSizer2.Add( self.arrangementGraphic, 0, wx.ALIGN_CENTER|wx.ALIGN_CENTER_HORIZONTAL|wx.ALIGN_CENTER_VERTICAL|wx.ALL|wx.EXPAND, 5 )
 		
 		throttleSizerStbd = wx.BoxSizer( wx.VERTICAL )
