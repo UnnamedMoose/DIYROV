@@ -101,7 +101,7 @@ Module* actuators[] = {&armModulesModule, &armActuatorModule, &engine1, &engine2
 Module* sensors[] = {&depthSensor, &depthSensor2};
 
 /* =============================================================================
- * FUNCTIONS DEFINITIONS.
+ * MAIN FUNCTIONS DEFINITIONS.
  * =============================================================================
  */
 void setup(void)
@@ -162,6 +162,11 @@ void loop(void)
 	// Reduce rate at which stuff happens.
 	delay(refreshRate.getValue());
 }
+
+/* =============================================================================
+ * HELPER FUNCTIONS DEFINITIONS.
+ * =============================================================================
+ */
 
 boolean getSerial(void)
 /* Read input from the serial port and store it in the inputDataBuffer buffer.
