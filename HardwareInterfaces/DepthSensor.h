@@ -27,7 +27,9 @@ class DepthSensor : public Module
 		DepthSensor(const char* sensorID, int sensorInputPin);
 		DepthSensor(void);
 		~DepthSensor(void);
-
+		
+		// FIXME this is a place-holder only, should use analogRead() and include a
+		//	calibration section
 		int getValue(void); // Override parent method.
 };
 
