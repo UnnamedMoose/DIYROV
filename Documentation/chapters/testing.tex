@@ -1,0 +1,205 @@
+\pagestyle{chapter-fancy-style}
+\chapter{Testing}
+
+%=====================
+\section{Procedure}
+
+The first stage of in-water tests was carried out in the Lamont
+towing tank of the University of Southampton. Figure \ref{fig:testingSetup}
+shows the experimental set-up used in the described tests.
+The towing tank provided a~calm, controlled
+environment without currents or wind. The water depth was under \unit[2]{metres},
+which was deemed sufficient for the initial test of the pressure vessel.
+Furthermore, the window in the side of the towing tank allowed easier observation
+of the robot from the side.
+
+There were three main tests to be carried out during the first series of testing:
+\begin{enumerate}
+\item  Testing of the power output of all the motors and making sure they can drive
+	the vehicle in a steady and controlled manner. If not, adjusting the control
+	inputs to compensate for any asymmetries
+\item Verifying that the provided visual cues, proposed control interface, and
+	available motor arrangements are suitable to allow a new user to operate the
+	vehicle efficiently and perform simple tasks, such as inspection of underwater
+	objects
+\item Submerging the vehicle to progressively larger depths to test the water-
+	tightness of the outer hull
+\end{enumerate}
+
+\begin{figure}[htb]
+\begin{center}
+\begin{tabular}{c c}
+	\subfloat[Dry and manoeuvring tests]
+		{\includegraphics*[width=0.45\textwidth,angle=270]{20160826_125304.jpg}
+		\label{figure:testingSetup:label:a} } &
+	\subfloat[For observation through side window]
+		{\includegraphics*[width=0.45\textwidth,angle=270]{20160826_141659.jpg}
+		\label{figure:testingSetup:label:b} } \\
+\end{tabular}
+\end{center}
+\caption{View of the testing set-up in the Lamont towing tank.}
+\label{fig:testingSetup}
+\end{figure}
+
+In order to comply with the health \& safety regulations, a strictly defined
+procedure of using the ROV was put in placed and adhered to throughout the testing:
+%
+\begin{enumerate}
+\item Plugging the ROV into a laptop via an Ethernet cable using a USB converter
+\item Powering-up the motors using a 12 V DC power supply placed on-shore
+\item Testing the camera system and ensuring each of the motors is operational
+\item Placing the vehicle in the water using an insulated rod and an attachment point
+	provided by the main tether
+\item Performing the required tests and tasks
+\item Surfacing the vehicle close to the operator and unplugging the power supply
+\item Recovering the vehicle by hand and finishing the test
+\end{enumerate}
+
+%=====================
+\section{Manoeuvring tests}\label{section:manoeuvringTests}
+
+Before the towing tank tests it had been recognised that despite all electric
+motors and electronic speed controllers being identical, the same demand signals
+from the Arduino board made each of the motors rotate at a slightly different
+speed. This had been identified by setting them to the highest RPM in pairs
+and listening to the sound they produce while adjusting the tuning constants in order to eliminate the beat frequency (much like tuning a guitar). One of the
+vertical thrusters proved to behave particularly differently than the others.
+Its tuning parameters were thus adjusted in the Arduino script before the tests,
+in order to achieve approximately identical RPM as the other vertical motor
+with the same thrust demand.
+
+Once the vehicle was placed in water its balance, initially tested in a small
+water container, was verified. The predicted centre of gravity location agreed
+well with the expectations, yielding neutral trim. At the outset of the tests
+the vehicle was also neutrally buoyant and kept a steady altitude just below the
+water surface. Placing the tether attachment at the centre of gravity negated
+any moments and prevented the ROV from adopting excess trim angles.
+At first, however, the tether was not as buoyant as initially hoped and was dragging
+the robot down to the bottom. An impromptu solution was employed whereby sheets
+of bubble wrap were attached at even intervals to the tether, making it neutrally
+buoyant.
+
+Then, several basic manoeuvres were attempted:
+moving in a straight line horizontally and in the vertical plane, orienting the
+ROV in a particular direction, and turning while under way.
+It has been found that the used motors and propellers provide more than enough
+thrust to make the vehicle agile and faster than expected. The control interface
+also fulfilled its purpose well and allowed the operator to convey commands to
+the ROV with ease. An example of a successful descent manoeuvre is seen in
+Figure \ref{fig:rovThroughTheWindow}.
+Due to the linear mapping of the joystick displacement to
+thrust demand it was rather difficult for the operator to execute very precise
+control over the vehicle, however. Such precise control requires very low levels
+of thrust, which can only be obtained with minimal joystick displacements in the
+current implementation.
+
+It was also found that the tether, in particular the power cable, was so
+stiff and twisted (it had spent most of its lifetime on a~reel prior to deployment)
+that it made it difficult for the ROV to move freely. This is because the
+twist in the tether exerted a~constant moment on the robot, which in turn
+rotated the ROV around the tether. This meant that adopting
+certain headings was impossible without constant actuation of the thrusters, for example.
+
+It had also been expected that the load on the motors would increase significantly
+when they operated in water instead of air, which was indeed observed. At first,
+the battery system had been fitted with \unit[1]{A} fuse, which was sufficient
+to operate four motors at their maximum thrusts in air. In water, however, 
+the \unit[1]{A} fuse allowed the user to only operate the motors at very low RPMs
+and made it difficult not to exceed the current limit, thus requiring a~fuse
+replacement. In practice, only a~small deviation in the joystick position would
+lead to burning the fuse. The internal electronics were capable of
+sustaining higher currents and the \unit[1]{A} limit had been chosen somewhat
+arbitrarily for increased safety. The safety concern was relaxed during the test
+and a~\unit[4]{A} fitted instead. This allowed the user to operate the ROV 
+without any restraint while still having a~safeguard built into the system.
+
+\begin{figure}[htb]
+\begin{center}
+\includegraphics*[width=0.6\textwidth,angle=270]{20160826_135245.jpg}
+\end{center}
+\caption{ROV floating near the bottom of the towing tank.}
+\label{fig:rovThroughTheWindow}
+\end{figure}
+
+%=====================
+\section{Blind control tests}
+
+Outside of control environment, the operator would not be able to see the ROV from their
+workstation and instead they would have to rely solely on the visual and other
+cues fed back to them from the on-board sensors. The next stage of tests focused
+on simulating this scenario by placing the operator so that the ROV was outside
+their field of view. They were then tasked with performing the same tasks as before
+(simple manoeuvres - straight line, turning circle, ascent/descent, keeping
+a constant heading) when relying only on the video feed from the USB camera
+fitted to the ROV.
+
+It has been found that latency present in the visual system was detrimental to
+the user's ability to manoeuvre the vehicle easily. They were able to establish
+the general direction the ROV was facing in relation to the main features of the
+nearby environment. Doing so required them to put in considerable effort and
+was further made difficult by the unpredictable forces and moments exerted by
+the tether. The exact reason for the existence of latency in the video feed is
+unclear - it could be due to the camera itself, due to the same CAT5 cable being
+used to transfer video and serial commands to the Arduino, due to some issues
+with the OpenCV library and its implementation in the current code, or due to
+limitations of the current graphical user interface design.
+
+Furthermore, it has been found that the 640x480 resolution of the camera is not
+sufficient to provide detailed view of the ROV surroundings when the vehicle is
+put in water with particulates in it. This made it difficult to judge the distance
+of the vehicle from the obstacles ahead by using visual cues only.
+Nonetheless, enough detail could be captured to allow key environmental
+features to be distinguished, as seen in Fig.~\ref{fig:onBoardPictures}.
+
+Lastly, the camera has a~considerable zoom. This makes approaching a~target at 
+a~close distance dfficult because it seems to be much larger and thus closer than it in fact is.
+At present, none of the ROV components are visible in the camera field of view.
+Changing this, for example by using a~camera with a~wider field of view and moving
+it further away from the pressure vessel surface, could help the operator judge
+proximity to obstacles. This is because both the visible ROV components and the
+obstacles would be distorted by the camera in the same way, and the relative
+distance could be assessed.
+
+\begin{figure}[htb]
+\begin{center}
+\begin{tabular}{c c}
+	\subfloat[ROV on the free surface]
+		{\includegraphics*[width=0.45\textwidth,angle=0]{20160826_135540162340_026.jpg}} &
+	\subfloat[Wavemakers at the end of the tank]
+		{\includegraphics*[width=0.45\textwidth,angle=0]{20160826_135540162340_539.jpg}} \\
+	\subfloat[Operators seen through the side window of the tank]
+		{\includegraphics*[width=0.45\textwidth,angle=0]{20160826_140221589085_280.jpg}} &
+	\subfloat[The far end of the tank]
+		{\includegraphics*[width=0.45\textwidth,angle=0]{20160826_150305045904_012.jpg}} \\
+\end{tabular}
+\end{center}
+\caption{Video frames captured by the on-board camera during towing tank tests.}
+\label{fig:onBoardPictures}
+\end{figure}
+
+%=====================
+\section{Water-tightness tests}
+
+Before the tests in the towing tank, the ROV had been submerged in a small water
+container (i.e. a bath tub) for the period of several hours to verify the efficacy
+of seals and connections. No water ingress had been observed even for overnight
+immersion tests at the depth of approximately 30 cm.
+
+The towing tank tests lasted approximately 3.5-4 hours, during which the ROV
+was removed from the water several times. After the initial several seconds
+after the first immersion no visible water bubbles were seen escaping from the
+hull, indicating the hull remained watertight.
+Throughout the tests, however, the vehicle was observed to gradually lose its
+neutral buoyancy. Towards the end of the trials, the ROV would linger close to the
+tank bottom, and making it ascend using the thrusters alone became difficult.
+After the final test run, the aft plug was removed and a~small amount of water was
+seen to leak from inside the pressure vessel. The exact volume was not verified due to lack of
+experience of the operators. It was sufficient to adversely affect the neutral buoyancy
+of the vehicle but did not reach the electronics, which suggests the leak was
+small. It is believed the water ingress took place through the aft seal between
+the hull and removable aft plug as it was at this location that small air bubbles
+were seen escaping at the beginning of each series of tests.
+The aft cable port could also be the culprit, although this is seen as less likely.
+
+
+

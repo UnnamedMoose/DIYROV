@@ -1,0 +1,196 @@
+\documentclass[11pt,a4paper,oneside]{report}
+
+%%% Title of this document, updated automatically in the title page and references
+\title{Design review and recommendations}
+
+\makeatletter
+\let\documenttitle\@title
+\makeatother
+
+%%% PACKAGES
+\usepackage[	bookmarks,%
+		breaklinks,%
+		backref=false,%
+		pdfhighlight=/I,%
+		pdffitwindow=true,%
+		pdfstartview=Fit,%
+		pdfcenterwindow=true,%
+		%linkbordercolor={0.4 0.4 1},% change border colour
+		colorlinks = false, % switch off colour linked text
+		pdfborder={0 0 0}, % switch off colour linked text
+		pdftitle=\documenttitle,%
+		pdfauthor=Artur K. Lidtke and Aleksander A. Lidtke]%
+		{hyperref} % cross-refenreces
+
+\usepackage{amsmath} % general maths
+\usepackage[square,sort,comma,numbers]{natbib} % bibliography; options needed to make it work with Mendeley & sorted citations
+\usepackage{booktabs} % ?
+\usepackage{graphicx} % figures
+\usepackage{times} % font for main text \textrm
+\usepackage{helvet} % font for sans serif bits \textsf
+\usepackage{sectsty} % separate format for section headings
+\usepackage[varg]{txfonts} % ?
+\usepackage{todonotes} % notes
+\usepackage{verbatim} % ?
+\usepackage{changepage} % local changes to margins, etc.
+\usepackage{setspace} % setstretch for linespacing
+%\usepackage{indentfirst} % indent the 1st paragraph of each section just as any other one
+\usepackage[nottoc]{tocbibind} % add table of figures, tables and bibliography in the contents
+
+\usepackage{color}
+\usepackage{listings}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{blue}{rgb}{0.1,0.1,1.0}
+ 
+\lstdefinestyle{myPythonStyle}{
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+ 
+\setcounter{tocdepth}{2} % exclude subsubsections from the ToC
+
+\usepackage{hhline} % double line in tables
+\usepackage{array} % table formatting
+\usepackage{float} % for figures in tabular form
+\usepackage{subfig} % --||--
+\usepackage{xspace} % smartly add or not a space at the end of macro expressions
+
+\usepackage{fancyhdr} % header/footer
+\usepackage{emptypage} % empty cleardoublepage
+\usepackage{etoolbox} % change page format using patchcmd
+
+\usepackage{titlesec} % detailed formatting of specific headings
+\usepackage{pdfpages}
+
+\usepackage{units}
+
+\graphicspath{{Figures/}} % where all the Figures are held
+
+\allsectionsfont{\sffamily} % set sections font to helvetica
+\renewcommand{\bibname}{References}
+
+%%% Macro definitions for Commonly used symbols
+\newcommand{\etal}{{\it et al.}\xspace}
+
+%%% Header and footer
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}} % keep chapter name with the chapter mark
+
+\fancypagestyle{chapter-fancy-style}{ % used for each page inside the chapters
+  \fancyhf{}% Clear header and footer
+  \fancyhead[RE,LO]{\large{\documenttitle}} % left odd, right even - chapter title
+  \fancyhead[LE,RO]{\large{
+   % The chapter number only if it's greater than 0
+   \ifnum\value{chapter}>0 \chaptername\ \thechapter. \fi
+   % The chapter title
+   \leftmark}} % left even, right odd
+  \fancyfoot[RE,LO]{}
+  \fancyfoot[LE,RO]{\thepage}
+  \renewcommand{\headrulewidth}{0.4pt}% Line at the header visible
+  \renewcommand{\footrulewidth}{0.4pt}% Line at the footer visible
+}
+
+\fancypagestyle{plain}{ % used for 1st page of each chapter
+  \fancyhf{}% Clear header and footer
+  \fancyhead[RE,LO]{\large{\documenttitle}} % left odd, right even - chapter title
+  \fancyfoot[RE,LO]{}
+  \fancyfoot[LE,RO]{\thepage}
+  \renewcommand{\headrulewidth}{0.4pt}% Line at the header visible
+  \renewcommand{\footrulewidth}{0.4pt}% Line at the footer visible
+}
+
+%%% PAGE LAYOUT - GENERAL
+\setlength{\topmargin}{-0.5cm}
+\setlength{\oddsidemargin}{0cm}
+\setlength{\evensidemargin}{0cm}
+\setlength{\textheight}{24cm}
+\setlength{\textwidth}{16cm}
+
+\setlength{\parindent}{0pt} % disable intendation
+% paragraph spacing; give a margin on how much it may be changed -> better layout
+\setlength{\parskip}{5pt plus 1pt minus 1pt} 
+
+\raggedbottom
+\setlength{\topskip}{1\topskip plus 5pt}
+\doublehyphendemerits=10000       % No consecutive line hyphens.
+\brokenpenalty=10000              % No broken words across columns/pages.
+\widowpenalty=9999                % Almost no widows at bottom of page.
+\clubpenalty=9999                 % Almost no orphans at top of page.
+\interfootnotelinepenalty=9999    % Almost never break footnotes.
+
+% change chapter title format
+\titleformat{\chapter}[hang] {\sffamily\huge\bfseries}{\chaptertitlename\ \thechapter:}{20pt}{}
+% change whitespace before and after \chapter, \section etc.
+\titlespacing*{\chapter}{0pt}{-15pt}{10pt} % left, upper, lower
+\titlespacing{\section}{0pt}{5pt}{5pt}
+\titlespacing{\subsection}{0pt}{2pt}{2pt}
+\titlespacing{\subsubsection}{0pt}{2pt}{2pt}
+
+%%% Table formatting
+\newcolumntype{Y}{>{\centering\arraybackslash}X} % expended column to fit page, centred horizontally
+\newcolumntype{C}{>{\centering\arraybackslash}m{3cm}} % wrapped text, fixed width column, centred vertically
+\newcolumntype{+}{>{\global\let\currentrowstyle\relax}}% start a custom formatted row
+\newcolumntype{^}{>{\currentrowstyle}} % column in a custom row
+\newcommand{\rowstyle}[1]{\gdef\currentrowstyle{#1}#1\ignorespaces} % applies format to the entire row
+
+%\usepackage{draftwatermark}
+%\SetWatermarkText{DRAFT}
+%\SetWatermarkScale{1}
+%\SetWatermarkLightness{0.9}
+
+\begin{document}
+
+%%% Title, contents, abstract, etc.
+\include{titlePage/titlePage}
+
+\include{chapters/abstract}
+
+\pagenumbering{Roman}
+
+% create table of contents and add it to bookmarks for easier navigation in the PDF
+\tableofcontents
+\addtocontents{toc}{\protect{\pdfbookmark[0]{\contentsname}{toc}}}
+\listoffigures
+\listoftables
+
+%%% Prepare formatting for main body
+\patchcmd{\chapter}{plain}{fancy}{}{} % 1st page of each chapter is set to plain by default, change this
+\pagestyle{fancy} % change page style from default "plain" to accommodate new header/footer settings
+
+\setcounter{page}{1}
+\pagenumbering{arabic}
+
+\onehalfspacing
+
+%%% Main body of the report
+\include{chapters/introduction}
+
+\include{chapters/manufacturingAndAssembly}
+\include{chapters/softwareDesign}
+\include{chapters/testing}
+
+%%% Conclusions
+\include{chapters/conclusions}
+
+%\bibliography{../library}{}
+%\bibliographystyle{ieeetr}
+
+%%% Appendix
+\begin{appendix}
+
+\end{appendix}
+
+\end{document}
+

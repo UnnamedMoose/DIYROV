@@ -1,0 +1,98 @@
+\pagestyle{chapter-fancy-style}
+\chapter{Conclusions}
+
+%=====================
+\section{Summary of the design}
+
+It has been demonstrated that even within a~limited budged of less than £300 and
+access only to basic tools, a~fully-functional remotely operated underwater vehicle 
+can be designed, manufactured and tested.
+The overall design concept using only four degrees of freedom control and employing
+a compact vehicle shape has proven to provide sufficient performance that would be
+expected of a low-cost sensor platform for use in shallow waters.
+Several specific aspects of the design should be refined but a precious
+few have also proven to be quite successful. Each of these groups will be discussed
+in more detail in the subsequent parts of this chapter.
+
+%=====================
+\section{Successful design features}
+
+Several of the chosen engineering solutions have been found to work particularly
+well during the tests. These were:
+%
+\begin{itemize}
+\item Using the on-board Arduino micro-controller to allow control of the ROV
+	from a standard laptop has proven to be a very flexible and low-cost solution
+\item The X-Box controller used to collect input data has been found to provide
+	a robust, easy-to-use interface
+\item Overall general arrangement of the vehicle has been successful and integrating
+	all of the electronics into a removable internal frame allowed ease of access
+	during assembly and disassembly
+\item Placing the motors so that their thrust passes through the centre of gravity
+	has allowed problem-free operation in the 4 DoF framework
+\item Use of an external power source allowed the vehicle to be compact and
+	lightweight, with the complete system fitting into an above-average sized
+	rucksack and being easily transportable by hand.
+\end{itemize}
+
+%=====================
+\section{Recommendations for future designs}
+
+Despite the general success of the project, several aspects of the design could,
+and a few certainly should, be improved if a next iteration or a brand new vehicle
+were to be designed. These summarise the lessons learned through the development
+and testing of the ROV:
+%
+\begin{itemize}
+\item Making the aft plug removable without the use of bolts or other permanent
+	connectors made it very easy to assemble the vehicle on-shore but led to
+	the vehicle not being completely watertight. This is a major issue which
+	could be addressed by i) using a threaded aft plug with a better seal
+	ii) use of a slot-in plug secured with nuts and fitted with additional o-rings
+	iii) manufacturing the pressure hull from a less compressible material (steel
+	or aluminium) and desigining bespoke watertight connections
+\item Removing pre-twist from the tether and making it float would make manoeuvring
+	the vehicle far easier
+\item Fixing the video latency issue would be necessary for operation in a real
+	environment. This may require using a dedicated VGA cable, a different camera,
+	or better implementation of the current software
+\item At present the motors are placed in water without waterproofing which would not
+	be acceptable in the long term in real environments such as seas or rivers.
+	A watertight enclosure would be necessary, most likely utilising a magnetic
+	coupling, to prevent corrosion of the motors.
+\item Being able to redirect a time trace of control inputs and sensor readings to a file
+	would make analysing the performance of the vehicle easier
+\item In the present design only the internal structure was grounded, extending this
+	to include all steel elements would add an important safety feature
+\item Using non-linear mapping or having two sensitivity settings for the controller
+	should make it easier to perform precise manoeuvres
+\item Adding a sensor measuring power output of the battery would be an important
+	indicator of the efficiency of the vehicle and would allow planning missions more accurately
+\item At present, each of the power wires in the connector in the aft plug (section~\ref{ssection:connectorOnTheROV})
+	ends with a~banana connector. Grouping the cables by the corresponding motors
+	and using a~single connector for each motor
+	would streamline the ROV assembly process significantly.
+\item At present, the external steel frame is difficult to disassemble or even
+	detach from the central hull due to the way the bolts are situated. At the
+	time it was not considered crucial to allow this but having such a possibility
+	would allow modifications to the design to be introduced more easily.
+\item The electrical system has been significantly over-designed in most places
+	in terms of current ratings. However, there are several segments with much lower
+	safety factors, which effectively dictate the maximum safe power output from the battery.
+	A~careful choice of suitable current ratings for each segment of the design would allow a~much
+	more efficient overall system design.
+\item Currently used off-the-shelf electronic speed controllers are straightforward
+	to utilise but require a~large amount of wiring to operate, which takes up a~considerable
+	amount of internal volume of the ROV. Using PCB-mounted variants or even controlling
+	the motors directly from the Arduino by pulsing current using transistors could
+	allow for a much more compact design. Ultimately, a~small PCB for a~single motor
+	or a~pair of motors could be devised. The PCBs could be connected using stack-through
+	connectors, thus eliminating most of the wiring used in the current design. This
+	would make the system more modular, and lower-mass and thus also smaller and more agile.
+\item Having the tether attach to the inspection hatch (aft plug) poses certain difficulties
+	during disassembly as often multiple connectors have to be disconnected and reconnected
+	just to allow a simple task to be accomplished. Moving the cable port to a stationary part
+	of the hull could simplify these operations.
+\item Adding controller calibration constants to the GUI settings window would make it more
+	easily adjustable by the user.
+\end{itemize}
