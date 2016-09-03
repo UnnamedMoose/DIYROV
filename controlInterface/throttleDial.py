@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Jun 19 20:18:07 2015
-
 @author: alek
 """
 

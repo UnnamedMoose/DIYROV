@@ -478,6 +478,51 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         except AttributeError:
             self.feedOn = False
             wx.MessageBox('Could not start video feed!', 'Error', wx.OK | wx.ICON_ERROR)
+            
+            # Create the bitmap object - converted photo from the ROV camera in wx format.
+            self.videoFeed = statbmp.GenStaticBitmap(self.videoPanel, wx.ID_ANY,
+                                                     #wx.Bitmap( u"../../Pictures/dron.jpg", wx.BITMAP_TYPE_ANY )
+                                                     #wx.EmptyBitmap(640,480)
+                                                     self.bmp
+                                                     )
+            
+            # Add the photo to the panel and resize to fit everything.
+            self.videoPanel.GetSizer().Add( self.videoFeed, 1, wx.ALL|wx.EXPAND, 5 )
+            self.videoPanel.GetSizer().SetSizeHints(self)
+            self.videoPanel.Layout()
+            self.videoPanel.SetFocus()
+            
+        except:
+            # TODO throw error - cannot start video feed
+            pass
+        
+    def onNewFrame( self, event ):
+        " Called when the internal timer requests a new frame to be updated. "
+        try:
+            # get a new frame, if it's OK then update the display
+            ret, frame = self.capture.read()
+            if ret:
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                height, width = frame.shape[:2]
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                self.bmp = wx.BitmapFromBuffer(width, height, frame)
+    
+                self.videoFeed = statbmp.GenStaticBitmap(self.videoFeedPanel, wx.ID_ANY,self.bmp)
+    
+                # add to the panel and resize to fit everything
+#                self.videoFeedPanel.GetSizer().Add( self.videoFeed, 1,
+#                    wx.ALIGN_CENTER_HORIZONTAL | wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
+                self.videoFeedPanel.Layout()
+                self.videoFeedPanel.SetFocus()
+    
+                # set the video feed as open
+                self.feedOn = True
+        
+        except AttributeError:
+            self.feedOn = False
+            
+            wx.MessageBox('Error while getting new frame', 'Error', 
+                    wx.OK | wx.ICON_ERROR)
     
     def getNewFrame(self):
         """ This gets called when the internal timer requests a new frame to be updated.
