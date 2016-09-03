@@ -1,0 +1,20 @@
+This is a README file for a home-made Remotely Operated Vehicle (ROV).
+Please see Documentation/manual.pdf for detailed information about this
+project. The included folders contain:
+
+- CAD - CAD files of the robot, including overview technical drawings in a pdf format.
+	An Excell spreadsheet with basic design calculations is also provided. All of
+	the CAD files are in Autodesk Inventor format, but an exchange file ROVassembly.stp
+	has been included too. This has may be imported into any CAD program (tested
+	with SolidWorks 2015 Student Edition)
+- Documentation - includes a report summarising the project and giving a description
+	of how it all works
+- Software
+	+ controlInterface - contains Python files used to run the PC client that
+		allows the ROV to be controlled
+	+ HardwareInterfaces - includes custom Arduino libraries used to control
+		various elements of functionality of the vehicle
+	+ ROVMain - holds the main Arduino sketch that runs on the micro-controller
+		on-board of the ROV
+
+Please see the LICENCE file for information on how this work may be used.
