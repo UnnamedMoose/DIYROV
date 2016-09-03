@@ -16,5 +16,9 @@ project. The included folders contain:
 		various elements of functionality of the vehicle
 	+ ROVMain - holds the main Arduino sketch that runs on the micro-controller
 		on-board of the ROV
+- BlockDiagrams - holds Dia files used to produce block diagrams, png files
+	may be found in Documentation/Figures
+- PCBDesigns - contains files used to produce PCB boards, organised in individual
+	sub-folders (currently only motorControlBoard)
 
 Please see the LICENCE file for information on how this work may be used.
