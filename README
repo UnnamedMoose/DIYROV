@@ -1,14 +1,17 @@
 This is a README file for a home-made Remotely Operated Vehicle (ROV).
-Please see Documentation/manual.pdf for detailed information about this
-project. The included folders contain:
+Please see Documentation/manual.pdf for detailed information about this project.
+
+To start building your own ROV, simply checkout this repository and follow the instructions
+in Documentation/manual.pdf. The individual folders of this repo contain:
 
 - CAD - CAD files of the robot, including overview technical drawings in a pdf format.
-	An Excell spreadsheet with basic design calculations is also provided. All of
+	An Excel spreadsheet with basic design calculations is also provided. All of
 	the CAD files are in Autodesk Inventor format, but an exchange file ROVassembly.stp
-	has been included too. This has may be imported into any CAD program (tested
+	has been included too. This may be imported into any CAD program (tested
 	with SolidWorks 2015 Student Edition)
 - Documentation - includes a report summarising the project and giving a description
-	of how it all works
+	of how it all works. It gives instructions and practical tips on how to manufacture
+	the ROV.
 - Software
 	+ controlInterface - contains Python files used to run the PC client that
 		allows the ROV to be controlled
@@ -16,9 +19,12 @@ project. The included folders contain:
 		various elements of functionality of the vehicle
 	+ ROVMain - holds the main Arduino sketch that runs on the micro-controller
 		on-board of the ROV
-- BlockDiagrams - holds Dia files used to produce block diagrams, png files
+- BlockDiagrams - block diagrams of the ROV system and its various subsystem. These
+	appear throughout Documentation/manual.pdf. The png versions of all the diagrams
 	may be found in Documentation/Figures
 - PCBDesigns - contains files used to produce PCB boards, organised in individual
-	sub-folders (currently only motorControlBoard)
+	sub-folders (currently only motorControlBoard). Includes gerbers of the PCBs,
+	which can readily be used to order the PCBs from a professional manufacturer
+	or to etch them yourself.
 
 Please see the LICENCE file for information on how this work may be used.
