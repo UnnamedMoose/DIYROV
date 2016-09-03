@@ -12,4 +12,5 @@ build-uno/ROVMain.o: ROVMain.ino \
  /usr/share/arduino/libraries//Module/Module.h \
  /usr/share/arduino/libraries//BrushlessDCMotor/BrushlessDCMotor.h \
  /usr/share/arduino/libraries//Servo/Servo.h \
- /usr/share/arduino/libraries//DepthSensor/DepthSensor.h
+ /usr/share/arduino/libraries//DepthSensor/DepthSensor.h \
+ /usr/share/arduino/libraries//LEDModule/LEDModule.h

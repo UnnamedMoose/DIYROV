@@ -3,7 +3,7 @@
 """
 Created on Sun May 24 16:34:31 2015
 
-@author: artur
+@author: Artur, Alek
 """
 
 import ROVguiBaseClasses
@@ -20,20 +20,22 @@ import numpy as np
 import datetime, multiprocessing
 from scipy import interpolate
 
+CONTROLLER_NAME_CHUNK_LENGTH=20 # Have to split controller names into lines, each with at most this many characters.
+
 def savePhotos(imgList,directory):
-    """ Save every photo froma list into separate files, the image nime will
-    cointain the current time to make sure nothing is overwritten. Intended to
-    be used in a separate proces not to block the GUI.
+    """ Save every photo from a list into separate files, the image name will
+    contain the current time to make sure nothing is overwritten. Intended to
+    be used in a separate process not to block the GUI.
     
     Arguments
     ----------
     imgList - list of images as output of cv2.VideoCapture.read.
-    directory - str with the directory where the photo will be writen.
+    directory - str with the directory where the photo will be written.
     
     Example
     ----------
     p = multiprocessing.Process(target=savePhotos, args=(self.imgBuff,self.videoDirectory))
-    p.start() # Dont p.join - will block the GUI thread.
+    p.start() # Don't p.join - will block the GUI thread.
     """
     outName=datetime.datetime.now().strftime("%Y%m%d_%H%M%S%f") # Time stamp the images.
     for i in range(len(imgList)):
@@ -133,7 +135,7 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         self.freqArduino = 100 # default refresh rate for the Arduino in Hz
         
         # video feed
-        self.freqVideo = 5 # frame rate update frquency
+        self.freqVideo = 5 # frame rate update frequency
         self.HUDcolour = (0,255,0) # RGB colour of the overlay on the HUD
         self.feedOn = False # switch indicating whether the video feed is on or off
         self.cameraIndex = 1 # index of the potential candidates for OpenCV capture object to actually use
@@ -146,7 +148,7 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         # serial communication
         self.portOpen = False # indicates if the serial communication port is open
         self.currentPort = 'None' # currently chosen port
-        self.arduinoSerialConnection = 0 # holds the serial connecion object once it has been initialised
+        self.arduinoSerialConnection = 0 # holds the serial connection object once it has been initialised
         self.freqSensorReadings = 5
         self.freqControlInputs = 5
         
@@ -155,8 +157,8 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         self.currentController = 'None'
         self.upperRpmLimit = 50.0 # limit rpm of the motors to avoid overloading
         self.deadZone = 0.05 # extent of raw input which gets treated like zero
-        self.lowerRpmLimit = 20 # lower value of output to arduino
-        self.zeroRpmValue = 10 # arduino doesn't appear to like an actual 0, foold it by giving a small output
+        self.lowerRpmLimit = 20 # lower value of output to Arduino
+        self.zeroRpmValue = 10 # Arduino doesn't appear to like an actual 0, fool it by giving a small output
         
         # for translating xy of the controller axes (x-columns,y-rows) into actual motor rpm demand
         mapCoordsX = np.array([[-1, 0, 1],
@@ -358,7 +360,7 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
             self.currentController = 'None'
 
     #=================================
-    # non-event funtion declarations
+    # non-event function declarations
         
     def updateControllers(self):
         """ Check what controllers are now plugged in and refresh the available choices """
@@ -375,7 +377,11 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
         # add the newly found controllers
         self.controllerChoice.Append('None')
         for controller in controllers:
+<<<<<<< HEAD
             # Make sure controller label isn't too long, which will make the layout explode - split it into parts if need be.
+=======
+        	# Make sure controller label isn't too long, which will make the layout explode - split it into parts if need be.
+>>>>>>> c833be251e4fb16a65c873e94d838ff6d61af478
         	chunkIDs=range(0,len(controller),CONTROLLER_NAME_CHUNK_LENGTH) # At least [0]
         	chunkIDs.append(len(controller)) # Always need to go up to the entire length of the name.
         	# This is the name of the controller, or the first part of it that's shorter than the desired length.
@@ -540,10 +546,10 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
                                             self.controller.axesValues['rhsStickYaxis'])
             
             def mapMotorInputs(throttleDemand):
-               # Accepts raw values between -1 and 1, scale and bound them to suit the arduino side
+               # Accepts raw values between -1 and 1, scale and bound them to suit the Arduino side
                 
                 if np.abs(throttleDemand) < self.deadZone:
-                    controlParameter = self.zeroRpmValue # actual demand sent to arduino
+                    controlParameter = self.zeroRpmValue # actual demand sent to Arduino
                     thrustReading = 0. # for displaying throttle on dials
                 
                 else:
@@ -552,7 +558,7 @@ class rovGuiMainFrame( ROVguiBaseClasses.mainFrame ):
 
                 return controlParameter,thrustReading
             
-            # set the arduino demands for motor rpm and update dial values
+            # set the Arduino demands for motor rpm and update dial values
             self.controlParameters['motorPortVer'],self.throttleDial_portVer.currentThrottle = \
                     mapMotorInputs(rpmPortVer)
             self.controlParameters['motorStbdVer'],self.throttleDial_stbdVer.currentThrottle = \
